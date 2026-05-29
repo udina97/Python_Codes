@@ -1,0 +1,26 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments and local dependency installs
+.venv/
+venv/
+env/
+ENV/
+
+# Jupyter/editor local state
+.ipynb_checkpoints/
+.vscode/
+.idea/
+
+# OS and runtime noise
+.DS_Store
+._*
+__MACOSX/
+*.log
+AGU_2025/autosave/pid*.txt
+
+# Oversized generated data files
+Python_postproc_Zev/u.mat
+Python_postproc_Zev/u.npy

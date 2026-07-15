@@ -25,7 +25,7 @@ from functions import get_dphidx,get_dphidy,get_dphidz,uvpnode2wnode,wnode2uvpno
 
 cases = ['Gap_12_9mps','Gap_8_9mps','Gap_4_9mps','Patch_12_9mps','Patch_8_9mps','Patch_4_9mps','ATTO','Sinusoidal','Flat']
 
-case = 5
+case = 6
 
 if case < 6:
     path_to_data = '/uufs/chpc.utah.edu/common/home/calaf-group2/GiuliaData/TKE_BUDGET_AND_RAV/'
@@ -168,7 +168,7 @@ del mask,mask4D
 # from scipy.stats import gaussian_kde
 
 level1 = 16*dz*zi
-level2 = 80*dz*zi
+level2 = 120*dz*zi
 
 fig, axs = plt.subplots(1, 1, figsize=(6, 6))
 

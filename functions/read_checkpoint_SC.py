@@ -60,6 +60,7 @@ def read_checkpoint_aniso(path, stepouts, nx, ny, nz):
     fs3D3 = ['SC', 'sc_new','wsc_new', 'tsw_new','RHSsc', 'Ds_opt2', 'F_KX', 'F_XX', 'F_PY', 'F_YY']
     fs3D4 = ['u_new','v_new','w_new','uu_new','vv_new','ww_new','uv_new','uw_new','vw_new']
     fs3D5 = ['txx_new','tyy_new','tzz_new','txy_new','txz_new','tyz_new']
+    fs3D6 = ['S_uvp']
     
     chpt = {}
     
@@ -101,6 +102,13 @@ def read_checkpoint_aniso(path, stepouts, nx, ny, nz):
         for kk in range(len(fs3D5)):
             chpt[fs3D5[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz + 1),order = 'F')
             displ += len3D
+
+        # Optional trailing diagnostics appended after the original anisotropy
+        # checkpoint fields. This keeps older checkpoints readable.
+        for kk in range(len(fs3D6)):
+            if displ + len3D <= tmp.size:
+                chpt[fs3D6[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz + 1),order = 'F')
+                displ += len3D
     
     return chpt
 

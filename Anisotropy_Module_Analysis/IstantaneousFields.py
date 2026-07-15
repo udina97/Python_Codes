@@ -48,11 +48,11 @@ z_w = np.arange(0,nz)*dz
 #%%Load surface checkpoint/istantaneous fields 
 # sim = 'yb_test_v2'
 
-sim = 'test_lag_1ms'
+sim = 'test_lag_dynT_noSGS'
 
 path = '/scratch/general/nfs1/u1450851/LES_Sims/'
 
-step = 50000   
+step = 70000   
 
 checkpnt = read_checkpoint_aniso(path+sim+'/output_checkpoint/',[step],nx,ny,nz)
 checkpnt_sfc = read_checkpoint_sfc_L(path+sim+'/output_checkpoint/',[step],nx,ny)
@@ -655,16 +655,20 @@ plt.show()
 
 #%%Compute Reynolds stresses using the on-the-fly averages
 
-uu = checkpnt['uu_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['u_new'][:,:,:nz]- checkpnt['txx_new'][:,:,:nz]
-vv = checkpnt['vv_new'][:,:,:nz] - checkpnt['v_new'][:,:,:nz]*checkpnt['v_new'][:,:,:nz]- checkpnt['tyy_new'][:,:,:nz]
-ww = checkpnt['ww_new'][:,:,:nz] - checkpnt['w_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz]- checkpnt['tzz_new'][:,:,:nz]
-uv = checkpnt['uv_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['v_new'][:,:,:nz]- checkpnt['txy_new'][:,:,:nz]
-uw = checkpnt['uw_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz]- checkpnt['txz_new'][:,:,:nz]
-vw = checkpnt['vw_new'][:,:,:nz] - checkpnt['v_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz]- checkpnt['tyz_new'][:,:,:nz]
+uu = checkpnt['uu_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['u_new'][:,:,:nz] #- checkpnt['txx_new'][:,:,:nz]
+vv = checkpnt['vv_new'][:,:,:nz] - checkpnt['v_new'][:,:,:nz]*checkpnt['v_new'][:,:,:nz] #- checkpnt['tyy_new'][:,:,:nz]
+ww = checkpnt['ww_new'][:,:,:nz] - checkpnt['w_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz] #- checkpnt['tzz_new'][:,:,:nz]
+uv = checkpnt['uv_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['v_new'][:,:,:nz] - checkpnt['txy_new'][:,:,:nz]
+uw = checkpnt['uw_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz] - checkpnt['txz_new'][:,:,:nz]
+vw = checkpnt['vw_new'][:,:,:nz] - checkpnt['v_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz] - checkpnt['tyz_new'][:,:,:nz]
 
-tke = uu + vv + ww
+tke = 0.5*(uu + vv + ww)
 
 [xB,yB,lamba3] = Anisotropy(nx,ny,nz,uu[:,:,:],vv[:,:,:],ww[:,:,:],uv[:,:,:],uw[:,:,:],vw[:,:,:])
+
+b11 = uu/(2*tke)-1/3
+b22 = vv/(2*tke)-1/3
+b33 = ww/(2*tke)-1/3
 
 #%%Check yB and xB are within physical interval
 
@@ -681,12 +685,26 @@ if np.any(xB>1):
 
 fig,axs = plt.subplots(1,6,tight_layout=True,figsize=(12,4))
 
-axs[0].plot(np.mean(uu,axis=(0,1)),z_uvp)
-axs[1].plot(np.mean(vv,axis=(0,1)),z_uvp)
-axs[2].plot(np.mean(ww,axis=(0,1)),z_uvp)
-axs[3].plot(np.mean(uv,axis=(0,1)),z_uvp)
-axs[4].plot(np.mean(uw,axis=(0,1)),z_uvp)
-axs[5].plot(np.mean(vw,axis=(0,1)),z_uvp)
+# axs[0].plot(np.mean(uu,axis=(0,1)),z_uvp,c='k')
+# axs[1].plot(np.mean(vv,axis=(0,1)),z_uvp,c='k')
+# axs[2].plot(np.mean(ww,axis=(0,1)),z_uvp,c='k')
+# axs[3].plot(np.mean(uv,axis=(0,1)),z_uvp,c='k')
+# axs[4].plot(np.mean(uw,axis=(0,1)),z_uvp,c='k')
+# axs[5].plot(np.mean(vw,axis=(0,1)),z_uvp,c='k',label='Tot')
+
+axs[0].plot(np.mean(-checkpnt['txx_new'][:,:,:nz],axis=(0,1)),z_uvp,c='g')
+axs[1].plot(np.mean(-checkpnt['tyy_new'][:,:,:nz],axis=(0,1)),z_uvp,c='g')
+axs[2].plot(np.mean(-checkpnt['tzz_new'][:,:,:nz],axis=(0,1)),z_uvp,c='g')
+axs[3].plot(np.mean(-checkpnt['txy_new'][:,:,:nz],axis=(0,1)),z_uvp,c='g')
+axs[4].plot(np.mean(-checkpnt['txz_new'][:,:,:nz],axis=(0,1)),z_uvp,c='g')
+axs[5].plot(np.mean(-checkpnt['tyz_new'][:,:,:nz],axis=(0,1)),z_uvp,c='g',label='SGS')
+
+axs[0].plot(np.mean(checkpnt['uu_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['u_new'][:,:,:nz],axis=(0,1)),z_uvp,c='r')
+axs[1].plot(np.mean(checkpnt['vv_new'][:,:,:nz] - checkpnt['v_new'][:,:,:nz]*checkpnt['v_new'][:,:,:nz],axis=(0,1)),z_uvp,c='r')
+axs[2].plot(np.mean(checkpnt['ww_new'][:,:,:nz] - checkpnt['w_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz],axis=(0,1)),z_uvp,c='r')
+axs[3].plot(np.mean(checkpnt['uv_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['v_new'][:,:,:nz],axis=(0,1)),z_uvp,c='r')
+axs[4].plot(np.mean(checkpnt['uw_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz],axis=(0,1)),z_uvp,c='r')
+axs[5].plot(np.mean(checkpnt['vw_new'][:,:,:nz] - checkpnt['v_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz],axis=(0,1)),z_uvp,c='r',label='Res')
     
 axs[0].set_xlabel(r"$\overline{u'u'}$",fontsize=14)
 axs[1].set_xlabel(r"$\overline{v'v'}$",fontsize=14)
@@ -698,8 +716,9 @@ axs[0].set_ylabel(r"$z/z_i$",fontsize=14)
 for i in range(len(axs)):
     # axs[i].legend()
     axs[i].set_ylim(0,z_uvp[-1])
-    
-# axs[-1].legend()
+    axs[i].grid()
+
+axs[-1].legend()
 # fig.suptitle(sfc+f" - {nx} - {Ug}m/s", fontsize=12)
 fig.suptitle(sim, fontsize=12)
 plt.show()
@@ -767,6 +786,116 @@ axs[1].set_ylabel('PDF', fontsize=14)
 axs[1].set_xlim(0,np.sqrt(3)/2)
 cbar = plt.colorbar(p)
 # axs[0].set_ylim(0,0.5)
+
+fig.suptitle(sim, fontsize=12)
+plt.show()
+
+# vslice = ny // 2
+
+# yB_slice = yB[:, vslice, :]
+
+# # Keep only negative values; mask everything else
+# yB_neg = np.ma.masked_where(yB_slice >= 0, yB_slice)
+
+# fig, axs = plt.subplots(2, 1, tight_layout=True, figsize=(5, 8))
+
+# p = axs[0].pcolormesh(x, z_uvp, yB_neg.T, cmap=ColorAnisotropy(), vmin=np.nanmin(yB_slice), vmax=0)
+
+# # Use only negative values for the histogram and KDE
+# vals_neg = yB_slice[yB_slice < 0]
+
+# kde = gaussian_kde(vals_neg)
+# x_pdf = np.linspace(vals_neg.min(), vals_neg.max(), 1000)
+# pdf = kde(x_pdf)
+
+# axs[1].hist(vals_neg, bins=50, density=True, alpha=0.4, label="Histogram")
+# axs[1].plot(x_pdf, pdf, 'r-', label="KDE PDF")
+
+# axs[0].set_xlabel(r'$x/z_i$', fontsize=14)
+# axs[0].set_ylabel(r'$z/z_i$', fontsize=14)
+# axs[0].set_title(r'$y_B < 0$ vertical slice', fontsize=14)
+
+# axs[1].set_xlabel(r'$y_B$', fontsize=14)
+# axs[1].set_ylabel('PDF', fontsize=14)
+# axs[1].set_xlim(vals_neg.min(), 0)
+
+# cbar = plt.colorbar(p, ax=axs[0])
+
+# fig.suptitle(sim, fontsize=12)
+# plt.show()
+
+#%%pcolormesh of Reynolds stress terms by filtering the negative values
+
+vslice = ny // 2
+
+stress_slice = checkpnt['tzz_new'][:, vslice, :-1]
+# stress_slice = checkpnt['ww_new'][:,vslice,:nz] - checkpnt['w_new'][:,vslice,:nz]*checkpnt['w_new'][:,vslice,:nz]
+# stress_slice = uu[:,vslice,:]
+
+# Keep only negative values; mask everything else
+stress_neg = np.ma.masked_where(stress_slice >= 0, stress_slice)
+
+fig, axs = plt.subplots(2, 1, tight_layout=True, figsize=(5, 8))
+
+p = axs[0].pcolormesh(x,z_uvp,stress_neg.T,cmap=ColorAnisotropy(),vmin=np.nanmin(stress_slice),vmax=0)
+
+# Use only negative values for the histogram and KDE
+vals_neg = stress_slice[stress_slice < 0]
+
+kde = gaussian_kde(vals_neg)
+x_pdf = np.linspace(vals_neg.min(), vals_neg.max(), 1000)
+pdf = kde(x_pdf)
+
+axs[1].hist(vals_neg, bins=50, density=True, alpha=0.4, label="Histogram")
+axs[1].plot(x_pdf, pdf, 'r-', label="KDE PDF")
+
+axs[0].set_xlabel(r'$x/z_i$', fontsize=14)
+axs[0].set_ylabel(r'$z/z_i$', fontsize=14)
+axs[0].set_title(r'$stress < 0$ vertical slice', fontsize=14)
+
+axs[1].set_xlabel(r'$stress$', fontsize=14)
+axs[1].set_ylabel('PDF', fontsize=14)
+axs[1].set_xlim(vals_neg.min(), 0)
+
+cbar = plt.colorbar(p, ax=axs[0])
+
+fig.suptitle(sim, fontsize=12)
+plt.show()
+
+#%%pcolormesh of Reynolds stress terms by filtering the positive values
+
+vslice = ny // 2
+
+# stress_slice = checkpnt['tzz_new'][:, vslice, :-1]
+# stress_slice = checkpnt['ww_new'][:,vslice,:nz] - checkpnt['w_new'][:,vslice,:nz]*checkpnt['w_new'][:,vslice,:nz]
+stress_slice = ww[:,vslice,:]
+
+# Keep only negative values; mask everything else
+stress_neg = np.ma.masked_where(stress_slice <= 0, stress_slice)
+
+fig, axs = plt.subplots(2, 1, tight_layout=True, figsize=(5, 8))
+
+p = axs[0].pcolormesh(x,z_uvp,stress_neg.T,cmap=ColorAnisotropy(),vmin=0,vmax=np.nanmax(stress_slice))
+
+# Use only negative values for the histogram and KDE
+vals_neg = stress_slice[stress_slice > 0]
+
+kde = gaussian_kde(vals_neg)
+x_pdf = np.linspace(vals_neg.min(), vals_neg.max(), 1000)
+pdf = kde(x_pdf)
+
+axs[1].hist(vals_neg, bins=50, density=True, alpha=0.4, label="Histogram")
+axs[1].plot(x_pdf, pdf, 'r-', label="KDE PDF")
+
+axs[0].set_xlabel(r'$x/z_i$', fontsize=14)
+axs[0].set_ylabel(r'$z/z_i$', fontsize=14)
+axs[0].set_title(r'$stress > 0$ vertical slice', fontsize=14)
+
+axs[1].set_xlabel(r'$stress$', fontsize=14)
+axs[1].set_ylabel('PDF', fontsize=14)
+axs[1].set_xlim(0,vals_neg.max())
+
+cbar = plt.colorbar(p, ax=axs[0])
 
 fig.suptitle(sim, fontsize=12)
 plt.show()
@@ -872,6 +1001,79 @@ axs[0,1].set_title(r'v',fontsize=12)
 axs[0,2].set_title(r'w',fontsize=12)
 
 fig.suptitle(sim, fontsize=12)
+plt.show()
+
+#%%Plot the dynamic relaxation time computed as a function of the strain rate tensor
+
+from matplotlib.colors import LogNorm
+T = ((3/checkpnt['S_uvp'])*(zi/uscale))/60
+vslice = ny//2
+
+fig,axs = plt.subplots(2,1,tight_layout=True,figsize=(5,8))
+p = axs[0].pcolormesh(x,z_uvp,T[:,vslice,:-1].T,cmap= 'jet',norm=LogNorm(),shading='auto')
+kde = gaussian_kde((T[:,vslice,:-1]).flatten())
+x_pdf = np.linspace(min((T[:,vslice,:-1]).flatten()), max((T[:,vslice,:-1]).flatten()), 1000)
+pdf = kde(x_pdf)
+axs[1].hist((T[:,vslice,:-1]).flatten(), bins=50, density=True, alpha=0.4, label="Histogram")
+axs[1].plot(x_pdf, pdf, 'r-', label="KDE PDF")
+axs[0].set_xlabel(r'$x/z_i$', fontsize=14)
+axs[0].set_ylabel(r'$z/z_i$', fontsize=14)
+axs[0].set_title('T vertical slice', fontsize=14)
+axs[1].set_xlabel(r'$T$', fontsize=14)
+axs[1].set_ylabel('PDF', fontsize=14)
+# axs[1].set_xlim(0,np.sqrt(3)/2)
+cbar = plt.colorbar(p)
+# axs[0].set_ylim(0,0.5)
+
+fig.suptitle(sim, fontsize=12)
+plt.show()
+
+#%%
+
+tmp = T[:,:,:-1][(yB<0)]
+
+#%%Plot the magnitude of the strain rate tensor
+
+S = checkpnt['S_uvp']
+
+fig,axs = plt.subplots(1,1,tight_layout=True)
+p = axs.pcolormesh(x,z_uvp,S[:,ny//2,:-1].T,cmap='jet')
+cbar = plt.colorbar(p)
+
+axs.set_xlabel(r'$x/z_i$',fontsize=12)
+axs.set_ylabel(r'$z/z_i$',fontsize=12)
+axs.set_title(r'$Strain Rate Magnitude$',fontsize=12)
+
+plt.show()
+
+#%%Plot streamlines x-z
+
+Umag = np.sqrt(checkpnt['u_new'][:,:,:-1]**2 + wnode2uvpnode(checkpnt['w_new'][:,:,:-1])**2)
+
+X,Y = np.meshgrid(x,z_uvp)
+
+fig,axs = plt.subplots(1,1,tight_layout=True)
+p = axs.pcolormesh(x,z_uvp,Umag[:,ny//2,:].T,cmap='jet',vmin=0,alpha=0.5)
+axs.streamplot(X,Y,checkpnt['u_new'][:,ny//2,:-1].T,checkpnt['w_new'][:,ny//2,:-1].T,density=2,linewidth=1,arrowsize=1.2,color='k')
+cbar = plt.colorbar(p)
+axs.set_xlabel(r'$x/z_i$',fontsize=12)
+axs.set_ylabel(r'$z/z_i$',fontsize=12)
+# axs.set_title(r'$Strain Rate Magnitude$',fontsize=12)
+plt.show()
+
+#%%Plot streamlines x-y
+
+Umag = np.sqrt(checkpnt['u'][:,:,:-1]**2 + checkpnt['v'][:,:,:-1]**2)
+
+X,Y = np.meshgrid(x,y)
+zlevel = 5
+fig,axs = plt.subplots(1,1,tight_layout=True)
+p = axs.pcolormesh(x,y,Umag[:,:,zlevel].T,cmap='jet',vmin=0,vmax=5,alpha=0.5)
+axs.streamplot(X,Y,checkpnt['u'][:,:,zlevel].T,checkpnt['v'][:,:,zlevel].T,density=2,linewidth=1,arrowsize=1.2,color='k')
+cbar = plt.colorbar(p)
+axs.set_xlabel(r'$x/z_i$',fontsize=12)
+axs.set_ylabel(r'$y/z_i$',fontsize=12)
+# axs.set_title(r'$Strain Rate Magnitude$',fontsize=12)
 plt.show()
 
 #%%----------------------------------------------------------------------------------------------------------------------------------------------------

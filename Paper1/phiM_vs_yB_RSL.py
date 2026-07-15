@@ -134,7 +134,7 @@ Nz_SLayer = 200
 for case in range(len(cases)):
 #----------------------------------------------------------------Giulia's HC cases--------------------------------------------------------------------------
     if case < 2:
-        path_to_data = '/uufs/chpc.utah.edu/common/home/calaf-group2/GiuliaData/TKE_BUDGET_AND_RAV/'
+        path_to_data = '/uufs/chpc.utah.edu/common/home/calaf-group2/Ben_research/GiuliaData/TKE_BUDGET_AND_RAV/'
         data = xr.open_dataarray(path_to_data + cases[case] + '/Data_Momentum_4TKE.nc')
         anisotropy = xr.open_dataarray(path_to_data + cases[case] + '/anisotropy.nc')
         terms_bdg = xr.open_dataarray(path_to_data + cases[case] + '/TKE_terms.nc')
@@ -153,7 +153,15 @@ for case in range(len(cases)):
         
         tmpDIS = copy.deepcopy(terms_bdg[:, :, :, 11])
         tmpRES = copy.deepcopy(terms_bdg[:, :, :, -1] + terms_bdg[:, :, :, 11])
-        tmpRES = np.where(np.abs(tmpRES) < 10, 0, tmpRES)
+        # tmpRES = np.where(np.abs(tmpRES) < 10, 0, tmpRES)
+        # tmpRES[abs(tmpRES) < 0.05*np.max(np.nanmedian(tmpRES,axis=(0,1)))] = 0
+        
+        # tmpDIS = terms_bdg[:, :, :, 11].copy()
+        # tmpRES = (terms_bdg[:, :, :, -1] + terms_bdg[:, :, :, 11]).copy()
+        
+        threshold = 0.05 * np.nanmax(np.nanmedian(tmpRES, axis=(0, 1)))
+        
+        tmpRES = tmpRES.where(np.abs(tmpRES) >= threshold, 0)
 
         # Avoid divide-by-zero
         with np.errstate(divide='ignore', invalid='ignore'):
@@ -284,8 +292,13 @@ for case in range(len(cases)):
         
         tmpRES = copy.deepcopy((terms_bdg.data[:,:,:,14] - terms_bdg.data[:,:,:,11]))
         tmpDIS = copy.deepcopy((terms_bdg.data[:,:,:,11]))
-        tmpRES[(abs(tmpRES)<1)] = 0
-        tmpNorm = ((tmpRES)/abs(tmpDIS))*100
+        val = np.nanmedian(tmpRES[(dist[:,:,5:]>38) & (dist[:,:,5:]<42)])
+        tmpRES[abs(tmpRES) < 0.05*val] = 0
+        # tmpRES[(abs(tmpRES)<1)] = 0
+        # tmpNorm = ((tmpRES)/abs(tmpDIS))*100
+        
+        with np.errstate(divide='ignore', invalid='ignore'):
+            tmpNorm = np.where(tmpDIS != 0, tmpRES / np.abs(tmpDIS) * 100, np.nan)
 
         phi_xr = xr.DataArray(np.ones(shape = (Nz_SLayer,2),order='F'),\
                                 dims=('z','variable'), coords = {'variable':['ridge','valley']})
@@ -447,8 +460,13 @@ for case in range(len(cases)):
         
         tmpRES = copy.deepcopy((terms_bdg.data[:,:,:,14] - terms_bdg.data[:,:,:,11]))
         tmpDIS = copy.deepcopy((terms_bdg.data[:,:,:,11]))
-        tmpRES[(abs(tmpRES)<1)] = 0
-        tmpNorm = ((tmpRES)/abs(tmpDIS))*100
+        val = np.nanmedian(tmpRES[(dist[:,:,5:]>38) & (dist[:,:,5:]<42)])
+        tmpRES[abs(tmpRES) < 0.05*val] = 0
+        # tmpRES[(abs(tmpRES)<1)] = 0
+        # tmpNorm = ((tmpRES)/abs(tmpDIS))*100
+        
+        with np.errstate(divide='ignore', invalid='ignore'):
+            tmpNorm = np.where(tmpDIS != 0, tmpRES / np.abs(tmpDIS) * 100, np.nan)
 
         phi_xr = xr.DataArray(np.ones(shape = (Nz_SLayer,),order='F'),\
                                 dims=('z',),)
@@ -624,6 +642,7 @@ for case in range(len(cases)):
 
         res_xy = diss_xy[8:] + prod_xy; res_tw = diss_tw[8:] + prod_tw[8:]
         # res_xy[(abs(res_xy)<0.01)] = 0; res_tw[(abs(res_tw)<0.01)] = 0
+        res_xy[(abs(res_xy)<0.05*np.max(abs(res_xy)))] = 0; res_tw[(abs(res_tw)<0.05*np.max(abs(res_tw)))] = 0
         norm_xy = res_xy/abs(diss_xy[8:])*100; norm_tw = res_tw/abs(diss_tw[8:])*100
         
         tke_xr[:,0] = norm_xy
@@ -688,6 +707,7 @@ def first_sustained_below(a, z, threshold=0.1):
 
 cases = ['Flat','Sinusoidal','ATTO','Gap_8_9mps','Patch_8_9mps','simulation_G']
 col = 'coral'
+col2 = 'tomato'
 from matplotlib.transforms import ScaledTranslation
 # fig,axs = plt.subplots(1,6,tight_layout=True,sharey=True,figsize=(12,4))
 layout = [['a)', 'b)', 'c)'],
@@ -722,8 +742,8 @@ for case in range(len(cases)):
         dx = lx/nx; dy = ly/ny; dz = lz/nz
         z_uvp = np.arange(1,nz)*dz + dz/2
         
-        # axs[case].plot(phi_prof[cases[case]][:Nz_SLayer,0],z_uvp[:Nz_SLayer]/canopyH,c='k',ls=ls[0])
-        # axs[case].plot(phi_prof[cases[case]][:Nz_SLayer,1],z_uvp[:Nz_SLayer]/canopyH,c='k',ls=ls[1])
+        axs[case].plot(phi_prof[cases[case]][:Nz_SLayer,0],z_uvp[:Nz_SLayer]/canopyH,c='k',ls=ls[0])
+        axs[case].plot(phi_prof[cases[case]][:Nz_SLayer,1],z_uvp[:Nz_SLayer]/canopyH,c='k',ls=ls[1])
         axs[case].axvline(1,c='k',ls=':')
         
         a0 = tke_prof[cases[case]][:100,0]
@@ -748,8 +768,8 @@ for case in range(len(cases)):
         ax2 = axs[case].twiny()
         a0 = aniso_prof[cases[case]][:,0]
         a1 = aniso_prof[cases[case]][:,1]
-        # ax2.plot(a0, z_uvp[:Nz_SLayer]/canopyH, c=col, ls=ls[0])
-        # ax2.plot(a1, z_uvp[:Nz_SLayer]/canopyH, c=col, ls=ls[1])
+        ax2.plot(a0, z_uvp[:Nz_SLayer]/canopyH, c=col2, ls=ls[0])
+        ax2.plot(a1, z_uvp[:Nz_SLayer]/canopyH, c=col2, ls=ls[1])
         # cross0 = crossing_points_yb(a0, z_uvp[:Nz_SLayer]/canopyH)
         # cross1 = crossing_points_yb(a1, z_uvp[:Nz_SLayer]/canopyH)
         # for zc in cross0:
@@ -759,8 +779,9 @@ for case in range(len(cases)):
         #     if zc>1:
         #         ax2.scatter(0.38, zc, s=40, marker='o',facecolors='none', edgecolors='red',linewidths=1.5, zorder=5) 
             
-        # ax2.axvline(0.38,c=col,ls=':')
-        # ax2.axvspan(0.36,0.4,alpha=0.3,color=col)
+        ax2.axvline(0.38,c=col2,ls=':')
+        ax2.axvspan(0.35,0.39,alpha=0.5,color=col)
+        ax2.axvspan(0.32,0.42,alpha=0.3,color=col)
         # ax2.set_xlabel(r"$y_B$",c=col,fontsize=16,labelpad=7)
         ax2.set_xlim(0,0.5)
         # ax2.tick_params(axis='x', colors=col)
@@ -779,8 +800,8 @@ for case in range(len(cases)):
         dx = lx/nx; dy = ly/ny; dz = lz/nz
         z_uvp = np.arange(0,nz)*dz + dz/2
         
-        # axs[case].plot(phi_prof[cases[case]][:,0],z_uvp[:Nz_SLayer]/canopyH,c='k',ls=ls[0])
-        # axs[case].plot(phi_prof[cases[case]][:,1],z_uvp[:Nz_SLayer]/canopyH,c='k',ls=ls[1])
+        axs[case].plot(phi_prof[cases[case]][:,0],z_uvp[:Nz_SLayer]/canopyH,c='k',ls=ls[0])
+        axs[case].plot(phi_prof[cases[case]][:,1],z_uvp[:Nz_SLayer]/canopyH,c='k',ls=ls[1])
         axs[case].axvline(1,c='k',ls=':')
         
         a0 = tke_prof[cases[case]][:,0]
@@ -806,8 +827,8 @@ for case in range(len(cases)):
         
         a0 = aniso_prof[cases[case]][:,0]
         a1 = aniso_prof[cases[case]][:,1]
-        # ax2.plot(a0, z_uvp[:Nz_SLayer]/canopyH, c=col, ls=ls[0])
-        # ax2.plot(a1, z_uvp[:Nz_SLayer]/canopyH, c=col, ls=ls[1])
+        ax2.plot(a0, z_uvp[:Nz_SLayer]/canopyH, c=col2, ls=ls[0])
+        ax2.plot(a1, z_uvp[:Nz_SLayer]/canopyH, c=col2, ls=ls[1])
         # cross0 = crossing_points_yb(a0, z_uvp[:Nz_SLayer]/canopyH)
         # cross1 = crossing_points_yb(a1, z_uvp[:Nz_SLayer]/canopyH)
         # for zc in cross0:
@@ -817,12 +838,13 @@ for case in range(len(cases)):
         #     if zc>2:
         #         ax2.scatter(0.38, zc, s=40, marker='o',facecolors='none', edgecolors='red',linewidths=1.5, zorder=5) 
                 
-        # ax2.axvline(0.38,c=col,ls=':')
-        # ax2.axvspan(0.36,0.4,alpha=0.3,color=col)
-        ax2.set_xlabel(r"$y_B$",c=col,fontsize=16,labelpad=7)
+        ax2.axvline(0.38,c=col2,ls=':')
+        ax2.axvspan(0.35,0.39,alpha=0.5,color=col)
+        ax2.axvspan(0.32,0.42,alpha=0.3,color=col)
+        ax2.set_xlabel(r"$y_B$",c=col2,fontsize=16,labelpad=7)
         ax2.set_xlim(0,0.5)
-        ax2.tick_params(axis='x', colors=col)
-        ax2.spines['top'].set_color(col)
+        ax2.tick_params(axis='x', colors=col2)
+        ax2.spines['top'].set_color(col2)
         ax2.tick_params(axis='x', which='major', labelsize=12)
         ax2.set_xticks([0,0.2,0.4])
         
@@ -835,7 +857,7 @@ for case in range(len(cases)):
         dx = lx/nx; dy = ly/ny; dz = lz/nz
         z_uvp = np.arange(0,nz)*dz + dz/2
         
-        # axs[case].plot(phi_prof[cases[case]][:],z_uvp[:Nz_SLayer]/canopyH,c='k',ls=ls[0])
+        axs[case].plot(phi_prof[cases[case]][:],z_uvp[:Nz_SLayer]/canopyH,c='k',ls=ls[0])
         axs[case].axvline(1,c='k',ls=':')
         
         a0 = tke_prof[cases[case]][:]
@@ -851,18 +873,19 @@ for case in range(len(cases)):
         ax2 = axs[case].twiny()
         
         a0 = aniso_prof[cases[case]][:]
-        # ax2.plot(a0, z_uvp[:Nz_SLayer]/canopyH, c=col, ls=ls[0])
+        ax2.plot(a0, z_uvp[:Nz_SLayer]/canopyH, c=col2, ls=ls[0])
         # cross0 = crossing_points_yb(a0, z_uvp[:Nz_SLayer]/canopyH)
         # for zc in cross0:
         #     if zc>2:
         #         ax2.scatter(0.38, zc, color='red', s=30, zorder=5)
 
-        # ax2.axvline(0.38,c=col,ls=':')
-        # ax2.axvspan(0.36,0.4,alpha=0.3,color=col)
-        ax2.set_xlabel(r"$y_B$",c=col,fontsize=16,labelpad=7)
+        ax2.axvline(0.38,c=col2,ls=':')
+        ax2.axvspan(0.35,0.39,alpha=0.5,color=col)
+        ax2.axvspan(0.32,0.42,alpha=0.3,color=col)
+        ax2.set_xlabel(r"$y_B$",c=col2,fontsize=16,labelpad=7)
         ax2.set_xlim(0,0.5)
-        ax2.tick_params(axis='x', colors=col)
-        ax2.spines['top'].set_color(col)
+        ax2.tick_params(axis='x', colors=col2)
+        ax2.spines['top'].set_color(col2)
         ax2.tick_params(axis='x', which='major', labelsize=12)
         ax2.set_xticks([0,0.2,0.4])
         
@@ -873,8 +896,8 @@ for case in range(len(cases)):
         z_uvp = data['z'][0]
         canopyH = 15.3
         
-        # axs[case].plot(phi_prof[cases[case]][:,0],z_uvp[:-8]/canopyH,c='k',ls=ls[0])
-        # axs[case].plot(phi_prof[cases[case]][:,1],z_uvp[:-8]/canopyH,c='k',ls=ls[1])
+        axs[case].plot(phi_prof[cases[case]][:,0],z_uvp[:-8]/canopyH,c='k',ls=ls[0])
+        axs[case].plot(phi_prof[cases[case]][:,1],z_uvp[:-8]/canopyH,c='k',ls=ls[1])
         axs[case].axvline(1,c='k',ls=':')
         
         a0 = tke_prof[cases[case]][:,0]
@@ -900,8 +923,8 @@ for case in range(len(cases)):
 
         a0 = aniso_prof[cases[case]][:,0]
         a1 = aniso_prof[cases[case]][:,1]
-        # ax2.plot(a0, z_uvp[:-8]/canopyH, c=col, ls=ls[0])
-        # ax2.plot(a1, z_uvp[:-8]/canopyH, c=col, ls=ls[1])
+        ax2.plot(a0, z_uvp[:-8]/canopyH, c=col2, ls=ls[0])
+        ax2.plot(a1, z_uvp[:-8]/canopyH, c=col2, ls=ls[1])
         # cross0 = crossing_points_yb(a0, z_uvp[:-8]/canopyH)
         # cross1 = crossing_points_yb(a1, z_uvp[:-8]/canopyH)
         # for zc in cross0:
@@ -912,8 +935,9 @@ for case in range(len(cases)):
         #     if zc>3 and zc<8 and tmp:
         #         ax2.scatter(0.38, zc, s=40, marker='o',facecolors='none', edgecolors='red',linewidths=1.5, zorder=5) 
         #         tmp = False
-        # ax2.axvline(0.38,c=col,ls=':')
-        # ax2.axvspan(0.36,0.4,alpha=0.3,color=col)
+        ax2.axvline(0.38,c=col2,ls=':')
+        ax2.axvspan(0.35,0.39,alpha=0.5,color=col)
+        ax2.axvspan(0.32,0.42,alpha=0.3,color=col)
         # ax2.set_xlabel(r"$y_B$",c=col,fontsize=16,labelpad=7)
         ax2.set_xlim(0,0.5)
         # ax2.tick_params(axis='x', colors=col)

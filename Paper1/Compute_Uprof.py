@@ -25,10 +25,10 @@ from functions import get_dphidx,get_dphidy,get_dphidz,uvpnode2wnode,wnode2uvpno
 
 cases = ['Gap_12_9mps','Gap_8_9mps','Gap_4_9mps','Patch_12_9mps','Patch_8_9mps','Patch_4_9mps','ATTO','Sinusoidal','Flat','simulation_G']
 
-case = 8
+case = 1
 
 if case < 6:
-    path_to_data = '/uufs/chpc.utah.edu/common/home/calaf-group2/GiuliaData/TKE_BUDGET_AND_RAV/'
+    path_to_data = '/uufs/chpc.utah.edu/common/home/calaf-group2/Ben_research/GiuliaData/TKE_BUDGET_AND_RAV/'
     data = xr.open_dataarray(path_to_data + cases[case] + '/Data_Momentum_4TKE.nc')
 elif case >= 6 and case < 9:
     path_to_data = '/uufs/chpc.utah.edu/common/home/calaf-group2/Ben_research/AnisotropyData/NetCDF_data/'
@@ -203,47 +203,47 @@ del coord_f,coord_p,idx_f,idx_p
 # ustar = np.sqrt(-cov_turb[:, :, 0])  # slice at hc_n height
 # del T_13,T_23,cov_turb
 
-u_mag = np.sqrt(data.data[:,:,:,0]**2 + data.data[:,:,:,1]**2 + wnode2uvpnode(data.data[:,:,:,2])**2)
+u_mag = np.sqrt(data.data[:,:,:,0]**2 + data.data[:,:,:,1]**2)# + wnode2uvpnode(data.data[:,:,:,2])**2)
 
 TwrAvgProf_f = np.zeros((Nz_SLayer),order='F')
 TwrAvgProf_p = np.zeros((Nz_SLayer),order='F')
 
-height = math.ceil(canopyH/dz)
+# height = math.ceil(canopyH/dz)
 
-disp_f = compute_d_twr_G(data, sel_coord_f, height, dz, zi, uscale, LAD)
-disp_p = np.zeros((Ntwr),order='F')
+# disp_f = compute_d_twr_G(data, sel_coord_f, height, dz, zi, uscale, LAD)
+# disp_p = np.zeros((Ntwr),order='F')
 
-z0hi = np.zeros((sel_coord_f.shape[0]),'d',order='F')
-ustar = np.zeros((sel_coord_f.shape[0]),'d',order='F')
+# z0hi = np.zeros((sel_coord_f.shape[0]),'d',order='F')
+# ustar = np.zeros((sel_coord_f.shape[0]),'d',order='F')
 u_mag_twr = np.zeros((sel_coord_f.shape[0],Nz_SLayer))
 
 for k in range(sel_coord_f.shape[0]):
     loc = sel_coord_f[k]
 
-    z = z_uvp
-    z_d = (z - ((disp_f[k])/zi))
+    # z = z_uvp
+    # z_d = (z - ((disp_f[k])/zi))
     
-    [z0hi[k],ustar[k],U_mean,U_data,z_data,u_fit] = compute_ustar_G(Nz_SLayer,z_d,data.data[loc[0],loc[1],:,0],\
-                                                            data.data[loc[0],loc[1],:,1],True)
+    # [z0hi[k],ustar[k],U_mean,U_data,z_data,u_fit] = compute_ustar_G(Nz_SLayer,z_d,data.data[loc[0],loc[1],:,0],\
+    #                                                         data.data[loc[0],loc[1],:,1],True)
         
-    u_mag_twr[k,:] = u_mag[loc[0],loc[1],:Nz_SLayer]/ustar[k]
+    u_mag_twr[k,:] = u_mag[loc[0],loc[1],:Nz_SLayer]#/ustar[k]
 
 TwrAvgProf_f = np.mean(u_mag_twr,axis=(0))
 
-z0hi = np.zeros((sel_coord_p.shape[0]),'d',order='F')
-ustar = np.zeros((sel_coord_p.shape[0]),'d',order='F')
+# z0hi = np.zeros((sel_coord_p.shape[0]),'d',order='F')
+# ustar = np.zeros((sel_coord_p.shape[0]),'d',order='F')
 u_mag_twr = np.zeros((sel_coord_p.shape[0],Nz_SLayer))
 
 for k in range(sel_coord_p.shape[0]):
     loc = sel_coord_p[k]
 
-    z = z_uvp
-    z_d = (z - ((disp_p[k])/zi))
+    # z = z_uvp
+    # z_d = (z - ((disp_p[k])/zi))
     
-    [z0hi[k],ustar[k],U_mean,U_data,z_data,u_fit] = compute_ustar_G(Nz_SLayer,z_d,data.data[loc[0],loc[1],:,0],\
-                                                            data.data[loc[0],loc[1],:,1],True)
+    # [z0hi[k],ustar[k],U_mean,U_data,z_data,u_fit] = compute_ustar_G(Nz_SLayer,z_d,data.data[loc[0],loc[1],:,0],\
+    #                                                         data.data[loc[0],loc[1],:,1],True)
     
-    u_mag_twr[k,:] = u_mag[loc[0],loc[1],:Nz_SLayer]/ustar[k]
+    u_mag_twr[k,:] = u_mag[loc[0],loc[1],:Nz_SLayer]#/ustar[k]
 
 TwrAvgProf_p = np.mean(u_mag_twr,axis=(0))
 

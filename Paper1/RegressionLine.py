@@ -88,6 +88,79 @@ var_yB_zero = (
 
 err_yB_zero = np.sqrt(var_yB_zero)
 
+#%%Block bootstrapping cases
+
+import numpy as np
+import statsmodels.api as sm
+
+start = 7
+end = 14
+
+case_names = ['Gap_12_9mps','Gap_8_9mps','Gap_4_9mps','Patch_12_9mps','Patch_8_9mps','Patch_4_9mps','ATTO','Sinusoidal','Flat']
+
+n_cases = len(case_names)
+n_boot = 10000
+
+rng = np.random.default_rng(42)
+
+boot_slope = np.full(n_boot, np.nan)
+boot_intercept = np.full(n_boot, np.nan)
+boot_r2 = np.full(n_boot, np.nan)
+boot_yB_zero = np.full(n_boot, np.nan)
+
+# y_B coordinates are the same for every case
+x_case = prof['Flat'][3, start:end]
+
+for b in range(n_boot):
+
+    # Resample entire cases WITH replacement
+    sampled_cases = rng.choice(case_names, size=n_cases, replace=True)
+
+    x_boot = []
+    y_boot = []
+
+    for case in sampled_cases:
+
+        x_boot.append(x_case)
+        y_boot.append(prof[case][0, start:end])
+
+    x_boot = np.concatenate(x_boot)
+    y_boot = np.concatenate(y_boot)
+
+    # Remove NaNs if necessary
+    mask = np.isfinite(x_boot) & np.isfinite(y_boot)
+
+    X_boot = sm.add_constant(x_boot[mask])
+
+    model = sm.OLS(y_boot[mask], X_boot).fit()
+
+    intercept = model.params[0]
+    slope = model.params[1]
+
+    boot_intercept[b] = intercept
+    boot_slope[b] = slope
+    boot_r2[b] = model.rsquared
+
+    if slope != 0:
+        boot_yB_zero[b] = -intercept / slope
+
+slope_ci = np.nanpercentile(boot_slope, [2.5, 50, 97.5])
+intercept_ci = np.nanpercentile(boot_intercept, [2.5, 50, 97.5])
+yB_zero_ci = np.nanpercentile(boot_yB_zero, [2.5, 50, 97.5])
+r2_ci = np.nanpercentile(boot_r2, [2.5, 50, 97.5])
+
+print("Slope:")
+print(slope_ci)
+
+print("Intercept:")
+print(intercept_ci)
+
+print("yB zero crossing:")
+print(yB_zero_ci)
+
+print("R2:")
+print(r2_ci)
+
 #%%Load Giometto's data
 import scipy.io
 
@@ -100,7 +173,7 @@ diss = data['ds_tw'].squeeze()[8:]
 prod = data['sp_tw'].squeeze()[8:]
 
 res_norm = ((prod + diss)/abs(diss))*100
-res_norm[(prod < 7e-3)] = 0
+# res_norm[(prod < 0.01*np.max(prod))] = 0
 
 #%%Compute anisotropy for Giometto's data
 
@@ -159,8 +232,43 @@ def Anisotropy1D(R11, R22, R33, R12, R13, R23):
     return xB, yB, lambda3
 
 xB,yB,lambda3 = Anisotropy1D(R11[8:], R22[8:], R33[8:], R12[8:], R13[8:], R23[8:])
+yB = yB[15:120]
+res_norm = res_norm[15:120]
 
+# Compute binned statistics
+TKE_median = []
+TKE_q25 = []
+TKE_q75 = []
+yB_mean = []
+bin_counts = []
 
+j = 0.1
+for i in range(28):
+    if i == 0:
+        mask = yB < j
+        yB_mean.append(0.05)
+    else:
+        mask = (yB > j) & (yB < j + 0.025)
+        yB_mean.append(j + 0.0125)
+
+    TKE_vals = res_norm[mask]
+
+    # Count points in this bin
+    n_points = np.count_nonzero(~np.isnan(TKE_vals))
+    bin_counts.append(n_points)
+
+    print(
+        f"Bin {i:2d}: "
+        f"yB = {yB_mean[-1]:.4f}, "
+        f"N = {n_points}"
+    )
+
+    TKE_median.append(np.nanmedian(TKE_vals))
+    TKE_q25.append(np.nanpercentile(TKE_vals, 25))
+    TKE_q75.append(np.nanpercentile(TKE_vals, 75))
+
+    j += 0.025
+    
 #%%Plot
 
 
@@ -186,7 +294,7 @@ for i in range(len(cases)):
     # y_line = slopes[i]*x_line + intercepts[i]
     # axs.plot(x_line,y_line,c='k')
 
-x_line = np.linspace(0.28,0.45,100)
+x_line = np.linspace(0.29,0.44,100)
 y_line_1 = slope*x_line + intercept
 # y_line_2 = np.mean(sl2)*x_line + 200
 axs.plot(x_line,y_line_1,c='k',ls='--')
@@ -194,6 +302,7 @@ axs.plot(x_line,y_line_1,c='k',ls='--')
 # axs.plot(x_line,y_line_2,c='k',ls='--')
 
 # axs.scatter(yB[15:100],res_norm[15:100],s=10,c='k')
+axs.plot(yB_mean,TKE_median,c='k',label='UC')
 
 axs.axhline(0, color='k', linestyle=':')
 axs.axvline(0.2875,color='k',linestyle=':')
@@ -209,6 +318,6 @@ axs.legend(loc='center left', bbox_to_anchor=(1, 0.5),fontsize=12)
 
 plt.tight_layout()
 
-# plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'TKEres_vs_YB_AllCases_IQR_legend.png',dpi=300,edgecolor='white',facecolor='white')
+# plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'TKEres_vs_YB_UC_IQR_legend.png',dpi=300,edgecolor='white',facecolor='white')
 
 plt.show()

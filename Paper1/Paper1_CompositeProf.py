@@ -72,48 +72,48 @@ for j in range(axs.shape[1]):  # loop over columns
 for i in range(len(cases)):
     if i == 0:
         lz = 0.96; nz = 384; dz = lz/nz; zi = 1000
-        prof = np.load(path_to_data + 'U_' + cases[i] + '.npy')
+        prof = np.load(path_to_data + 'U_' + cases[i] + '_Ug.npy')
         axs[i,0].plot(prof,(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='k')
     elif i > 0 and i < 3:
         lz = 0.96; nz = 384; dz = lz/nz; zi = 1000
-        prof_p = np.load(path_to_data + 'U_' + cases[i] + '_p.npy')
-        prof_v = np.load(path_to_data + 'U_' + cases[i] + '_v.npy')
+        prof_p = np.load(path_to_data + 'U_' + cases[i] + '_p_Ug.npy')
+        prof_v = np.load(path_to_data + 'U_' + cases[i] + '_v_Ug.npy')
         axs[i,0].plot(prof_p,(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='k',ls='-')
         axs[i,0].plot(prof_v,(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='k',ls='--')
     elif i >= 3 and i < 5:
         lz = 1; nz = 256; dz = lz/nz; zi = 1000
-        prof_p = np.load(path_to_data + 'U_' + cases[i] + '_p.npy')
-        prof_f = np.load(path_to_data + 'U_' + cases[i] + '_f.npy')
+        prof_p = np.load(path_to_data + 'U_' + cases[i] + '_p_Ug.npy')
+        prof_f = np.load(path_to_data + 'U_' + cases[i] + '_f_Ug.npy')
         axs[i,0].plot(prof_f,(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='k',ls='-')
         axs[i,0].plot(prof_p,(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='k',ls='--')
     else:
         z = np.arange(0.5,160.5,1)/15.3
-        prof_xy = np.load(path_to_data + 'U_' + cases[i] + '_xy.npy')
-        prof_tw = np.load(path_to_data + 'U_' + cases[i] + '_tw.npy')
+        prof_xy = np.load(path_to_data + 'U_' + cases[i] + '_xy_Ug.npy')
+        prof_tw = np.load(path_to_data + 'U_' + cases[i] + '_tw_Ug.npy')
         axs[i,0].plot(prof_xy[8:],z[:-8],c='k',ls='-')
         axs[i,0].plot(prof_tw[8:],z[:-8],c='k',ls='--')
         
 for i in range(len(cases)):
     if i == 0:
         lz = 0.96; nz = 384; dz = lz/nz; zi = 1000
-        prof = np.load(path_to_data + 'Shear_' + cases[i] + '.npy')
+        prof = np.load(path_to_data + 'Shear_' + cases[i] + '_Ug.npy')
         axs[i,1].plot(prof,(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='k')
     elif i > 0 and i < 3:
         lz = 0.96; nz = 384; dz = lz/nz; zi = 1000
-        prof_p = np.load(path_to_data + 'Shear_' + cases[i] + '_p.npy')
-        prof_v = np.load(path_to_data + 'Shear_' + cases[i] + '_v.npy')
+        prof_p = np.load(path_to_data + 'Shear_' + cases[i] + '_p_Ug.npy')
+        prof_v = np.load(path_to_data + 'Shear_' + cases[i] + '_v_Ug.npy')
         axs[i,1].plot(prof_p,(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='k',ls='-')
         axs[i,1].plot(prof_v,(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='k',ls='--')
     elif i >= 3 and i < 5:
         lz = 1; nz = 256; dz = lz/nz; zi = 1000
-        prof_p = np.load(path_to_data + 'Shear_' + cases[i] + '_p.npy')
-        prof_f = np.load(path_to_data + 'Shear_' + cases[i] + '_f.npy')
+        prof_p = np.load(path_to_data + 'Shear_' + cases[i] + '_p_Ug.npy')
+        prof_f = np.load(path_to_data + 'Shear_' + cases[i] + '_f_Ug.npy')
         axs[i,1].plot(prof_f,(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='k',ls='-')
         axs[i,1].plot(prof_p,(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='k',ls='--')
     else:
         z = np.arange(0.5,160.5,1)/15.3
-        prof_xy = np.load(path_to_data + 'Shear_' + cases[i] + '_xy.npy')
-        prof_tw = np.load(path_to_data + 'Shear_' + cases[i] + '_tw.npy')
+        prof_xy = np.load(path_to_data + 'Shear_' + cases[i] + '_xy_Ug.npy')
+        prof_tw = np.load(path_to_data + 'Shear_' + cases[i] + '_tw_Ug.npy')
         axs[i,1].plot(prof_xy[8:],z[:-8],c='k',ls='-')
         axs[i,1].plot(prof_tw[8:],z[:-8],c='k',ls='--')
     
@@ -166,10 +166,10 @@ for i in range(len(cases)):
 # axs[-1, 3].get_shared_x_axes().remove(axs[-1, 3])
         
 for i in range(0,len(cases)):
-    axs[i,0].set_xlim(0,15)
+    axs[i,0].set_xlim(0,1)
     axs[i,0].set_ylim(0,10)
     # axs[i,0].set_ylabel(r"hi"+"\n"+r"$z/h_C$",fontsize=15)
-    axs[i,1].set_xlim(-0.1,1.7)
+    axs[i,1].set_xlim(-0.001,0.01)
     axs[i,2].set_xlim(-0.4,2.5)
     axs[i,0].tick_params(axis='y',which='major',labelsize=12)
 axs[-2,3].set_xlim(-0.75,0.75)
@@ -181,8 +181,8 @@ for i in range(len(axs)):
         axs[i,j].grid(alpha=0.5)
         # axs[i,j].set_yscale('log')
     
-axs[-1,0].set_xlabel(r"$\overline{U}/u_*$",fontsize=13)
-axs[-1,1].set_xlabel(r"$\sqrt{\overline{u'w'}^2 + \overline{v'w'}^2}/u_*^2$",fontsize=13)
+axs[-1,0].set_xlabel(r"$\overline{U}/U_G$",fontsize=13)
+axs[-1,1].set_xlabel(r"$\sqrt{\overline{u'w'}^2 + \overline{v'w'}^2}/U_G^2$",fontsize=13)
 axs[-1,2].set_xlabel(r"$\phi_M$",fontsize=13)
 axs[-2,3].set_xlabel(r"$Sk_w$",fontsize=13)
 
@@ -208,6 +208,19 @@ fig.subplots_adjust(
     wspace=0.1
 )
 
-# plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'Mom_TwrProf_AllCases_labels.png',dpi=300,edgecolor='white',facecolor='white')
+from matplotlib.ticker import ScalarFormatter
+
+
+class ZeroScalarFormatter(ScalarFormatter):
+    def __call__(self, x, pos=None):
+        if np.isclose(x, 0):
+            return "0"
+        return super().__call__(x, pos)
+    
+for ax in axs.ravel():
+    if ax.get_visible():
+        ax.xaxis.set_major_formatter(ZeroScalarFormatter())
+
+# plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'Mom_TwrProf_AllCases_labels_Ug.png',dpi=300,edgecolor='white',facecolor='white')
 
 plt.show()

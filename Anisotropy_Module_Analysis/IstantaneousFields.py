@@ -48,11 +48,11 @@ z_w = np.arange(0,nz)*dz
 #%%Load surface checkpoint/istantaneous fields 
 # sim = 'yb_test_v2'
 
-sim = 'test_lag_dynT_noSGS'
+sim = 'test_tke_sgs_classic_L2D'
 
 path = '/scratch/general/nfs1/u1450851/LES_Sims/'
 
-step = 70000   
+step = 20000   
 
 checkpnt = read_checkpoint_aniso(path+sim+'/output_checkpoint/',[step],nx,ny,nz)
 checkpnt_sfc = read_checkpoint_sfc_L(path+sim+'/output_checkpoint/',[step],nx,ny)
@@ -655,14 +655,16 @@ plt.show()
 
 #%%Compute Reynolds stresses using the on-the-fly averages
 
-uu = checkpnt['uu_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['u_new'][:,:,:nz] #- checkpnt['txx_new'][:,:,:nz]
-vv = checkpnt['vv_new'][:,:,:nz] - checkpnt['v_new'][:,:,:nz]*checkpnt['v_new'][:,:,:nz] #- checkpnt['tyy_new'][:,:,:nz]
-ww = checkpnt['ww_new'][:,:,:nz] - checkpnt['w_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz] #- checkpnt['tzz_new'][:,:,:nz]
-uv = checkpnt['uv_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['v_new'][:,:,:nz] - checkpnt['txy_new'][:,:,:nz]
-uw = checkpnt['uw_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz] - checkpnt['txz_new'][:,:,:nz]
-vw = checkpnt['vw_new'][:,:,:nz] - checkpnt['v_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz] - checkpnt['tyz_new'][:,:,:nz]
+uu = checkpnt['uu_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['u_new'][:,:,:nz] #+ (2/3)*checkpnt['tke_sgs']
+vv = checkpnt['vv_new'][:,:,:nz] - checkpnt['v_new'][:,:,:nz]*checkpnt['v_new'][:,:,:nz] #+ (2/3)*checkpnt['tke_sgs']
+ww = checkpnt['ww_new'][:,:,:nz] - checkpnt['w_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz] #+ (2/3)*checkpnt['tke_sgs']
+uv = checkpnt['uv_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['v_new'][:,:,:nz] #- checkpnt['txy'][:,:,:nz]
+uw = checkpnt['uw_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz] #- checkpnt['txz'][:,:,:nz]
+vw = checkpnt['vw_new'][:,:,:nz] - checkpnt['v_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz] #- checkpnt['tyz'][:,:,:nz]
 
-tke = 0.5*(uu + vv + ww)
+tke_res = 0.5*(uu + vv + ww)
+tke_sgs = checkpnt['tke_sgs'][:,:,:nz]
+tke_tot = tke_res + tke_sgs
 
 [xB,yB,lamba3] = Anisotropy(nx,ny,nz,uu[:,:,:],vv[:,:,:],ww[:,:,:],uv[:,:,:],uw[:,:,:],vw[:,:,:])
 
@@ -680,6 +682,49 @@ if np.any(xB<0):
     print('Negative values of xB')
 if np.any(xB>1):
     print('xB exceeds max value')
+
+#%%Plot pcolor and PDF of SGS TKE
+
+# level = 0
+
+# fig,axs = plt.subplots(2,1,tight_layout=True,figsize=(5,8))
+# p = axs[0].pcolormesh(x,y,checkpnt['tke_sgs'][:,:,level].T,cmap= ColorAnisotropy())
+# kde = gaussian_kde((checkpnt['tke_sgs'][:,:,level]).flatten())
+# x_pdf = np.linspace(min((checkpnt['tke_sgs'][:,:,level]).flatten()), max((checkpnt['tke_sgs'][:,:,level]).flatten()), 1000)
+# pdf = kde(x_pdf)
+# axs[1].hist((checkpnt['tke_sgs'][:,:,level]).flatten(), bins=50, density=True, alpha=0.4, label="Histogram")
+# axs[1].plot(x_pdf, pdf, 'r-', label="KDE PDF")
+# axs[0].set_xlabel(r'$x/z_i$', fontsize=14)
+# axs[0].set_ylabel(r'$y/z_i$', fontsize=14)
+# axs[0].set_title('tke at Sfc', fontsize=14)
+# axs[1].set_xlabel(r'$e_{sgs}$', fontsize=14)
+# axs[1].set_ylabel('PDF', fontsize=14)
+# # axs[1].set_xlim(0,np.sqrt(3)/2)
+# cbar = plt.colorbar(p)
+
+# fig.suptitle(sim, fontsize=12)
+# plt.show()
+
+vslice = ny//2
+
+fig,axs = plt.subplots(2,1,tight_layout=True,figsize=(5,8))
+p = axs[0].pcolormesh(x,z_uvp,checkpnt['tke_sgs'][:,vslice,:].T,cmap= ColorAnisotropy(),vmin=0,vmax=np.median(checkpnt['tke_sgs'][:,vslice,:]))
+kde = gaussian_kde((checkpnt['tke_sgs'][:,vslice,:]).flatten())
+x_pdf = np.linspace(min((checkpnt['tke_sgs'][:,vslice,:]).flatten()), max((checkpnt['tke_sgs'][:,vslice,:]).flatten()), 1000)
+pdf = kde(x_pdf)
+axs[1].hist((checkpnt['tke_sgs'][:,vslice,:]).flatten(), bins=50, density=True, alpha=0.4, label="Histogram")
+axs[1].plot(x_pdf, pdf, 'r-', label="KDE PDF")
+axs[0].set_xlabel(r'$x/z_i$', fontsize=14)
+axs[0].set_ylabel(r'$z/z_i$', fontsize=14)
+# axs[0].set_title('yB vertical slice', fontsize=14)
+axs[1].set_xlabel(r'$e_{sgs}$', fontsize=14)
+axs[1].set_ylabel('PDF', fontsize=14)
+# axs[1].set_xlim(0,np.sqrt(3)/2)
+cbar = plt.colorbar(p)
+# axs[0].set_ylim(0,0.5)
+
+fig.suptitle(sim, fontsize=12)
+plt.show()
 
 #%%
 

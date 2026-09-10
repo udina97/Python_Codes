@@ -14,7 +14,10 @@ def read_checkpoint(path, stepouts, nx, ny, nz):
     import os
     
     fs3D1 = ['u', 'v', 'w', 'RHSx', 'RHSy', 'RHSz']
-    fs3D2 = ['Cs_opt2', 'F_LM', 'F_MM', 'F_QN', 'F_NN']
+    fs3D2 = ['Cs_opt2']
+    fs3D2_uvp = ['tke_sgs']
+    fs3D2_debug = ['trace_L_sgs', 'denom_tke_sgs']
+    fs3D2_lag = ['F_LM', 'F_MM', 'F_QN', 'F_NN']
     fs3D3 = ['SC','RHSsc', 'Ds_opt2', 'F_KX', 'F_XX', 'F_PY', 'F_YY']
     
     
@@ -40,7 +43,22 @@ def read_checkpoint(path, stepouts, nx, ny, nz):
         for kk in range(len(fs3D2)):
             chpt[fs3D2[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz + 1),order = 'F')
             displ += len3D
-            
+
+        len3D = nx * ny * nz
+        for kk in range(len(fs3D2_uvp)):
+            chpt[fs3D2_uvp[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz),order = 'F')
+            displ += len3D
+
+        len3D = nx * ny * (nz + 1)
+        for kk in range(len(fs3D2_debug)):
+            chpt[fs3D2_debug[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz + 1),order = 'F')
+            displ += len3D
+
+        len3D = nx * ny * (nz + 1)
+        for kk in range(len(fs3D2_lag)):
+            chpt[fs3D2_lag[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz + 1),order = 'F')
+            displ += len3D
+
         len3D = nx * ny * (nz + 1)
         # Reshape data and save to structure
         for kk in range(len(fs3D3)):
@@ -56,10 +74,13 @@ def read_checkpoint_aniso(path, stepouts, nx, ny, nz):
     import os
     
     fs3D1 = ['u', 'v', 'w', 'RHSx', 'RHSy', 'RHSz']
-    fs3D2 = ['Cs_opt2', 'F_LM', 'F_MM', 'F_QN', 'F_NN']
-    fs3D3 = ['SC', 'sc_new','wsc_new', 'tsw_new','RHSsc', 'Ds_opt2', 'F_KX', 'F_XX', 'F_PY', 'F_YY']
+    fs3D2 = ['Cs_opt2']
+    fs3D2_uvp = ['tke_sgs']
+    fs3D2_debug = ['trace_L_sgs', 'denom_tke_sgs']
+    fs3D2_lag = ['F_LM', 'F_MM', 'F_QN', 'F_NN']
+    fs3D3 = ['SC', 'sc_new','wsc_new','RHSsc', 'Ds_opt2', 'F_KX', 'F_XX', 'F_PY', 'F_YY']
     fs3D4 = ['u_new','v_new','w_new','uu_new','vv_new','ww_new','uv_new','uw_new','vw_new']
-    fs3D5 = ['txx_new','tyy_new','tzz_new','txy_new','txz_new','tyz_new']
+    fs3D5 = ['txx','tyy','tzz','txy','txz','tyz']
     fs3D6 = ['S_uvp']
     
     chpt = {}
@@ -83,6 +104,21 @@ def read_checkpoint_aniso(path, stepouts, nx, ny, nz):
         # Reshape data and save to structure
         for kk in range(len(fs3D2)):
             chpt[fs3D2[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz + 1),order = 'F')
+            displ += len3D
+
+        len3D = nx * ny * nz
+        for kk in range(len(fs3D2_uvp)):
+            chpt[fs3D2_uvp[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz),order = 'F')
+            displ += len3D
+
+        len3D = nx * ny * (nz + 1)
+        for kk in range(len(fs3D2_debug)):
+            chpt[fs3D2_debug[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz + 1),order = 'F')
+            displ += len3D
+
+        len3D = nx * ny * (nz + 1)
+        for kk in range(len(fs3D2_lag)):
+            chpt[fs3D2_lag[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz + 1),order = 'F')
             displ += len3D
             
         len3D = nx * ny * (nz + 1)
@@ -173,7 +209,8 @@ def read_checkpoint_mom(path, stepouts, nx, ny, nz):
     import os
     
     fs3D1 = ['u', 'v', 'w', 'RHSx', 'RHSy', 'RHSz']
-    fs3D2 = ['Cs_opt2', 'F_LM', 'F_MM', 'F_QN', 'F_NN']
+    fs3D2 = ['Cs_opt2', 'k_sgs', 'L','G','num','c_eps', 'F_LM', 'F_MM', 'F_QN', 'F_NN']
+    fs3D3 = ['yB']
     
     chpt = {}
     
@@ -197,6 +234,10 @@ def read_checkpoint_mom(path, stepouts, nx, ny, nz):
         for kk in range(len(fs3D2)):
             chpt[fs3D2[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz + 1),order = 'F')
             displ += len3D
-
+            
+        len3D = nx * ny * nz
+        for kk in range(len(fs3D3)):
+            chpt[fs3D3[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz),order = 'F')
+            displ += len3D
     
     return chpt

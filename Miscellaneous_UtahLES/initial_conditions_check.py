@@ -188,7 +188,7 @@ nz = 64
 
 lx = 2*np.pi
 ly = 2*np.pi
-lz = 2
+lz = 1
 
 dx = lx/nx
 dy = ly/ny
@@ -198,16 +198,16 @@ z_uvp = np.arange(0,nz)*dz + dz/2
 z_w = np.arange(0,nz)*dz
 
 # path = '/uufs/chpc.utah.edu/common/home/calaf-group3/Giulia_research3/miscellaneous/'
-path = '/scratch/general/nfs1/u1450851/LES_Sims/Homog/64/'
+path = '/scratch/general/nfs1/u1450851/LES_Sims/'
 
-sim = 'homo64_classic_9'
+sim = 'test_mod_grad'
 
-fs3D1 = ['u','v','w','T']
+fs3D1 = ['u','v','w']
 
-# ic = load2decomp_initialcond(path+sim+'/', nx, ny, nz)
-ic_s = load2decomp_initialcond_SC(path+sim+'/', fs3D1, nx, ny, nz)
+ic = load2decomp_initialcond(path+sim+'/', nx, ny, nz)
+# ic_s = load2decomp_initialcond_SC(path+sim+'/', fs3D1, nx, ny, nz)
 
-plot_initcond(ic_s, fs3D1, z_uvp, z_w)
+plot_initcond(ic, fs3D1, z_uvp, z_w)
 
 
 #%%

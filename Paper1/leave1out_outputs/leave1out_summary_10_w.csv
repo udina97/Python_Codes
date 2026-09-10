@@ -1,0 +1,11 @@
+metric,value
+case_balanced_weights,True
+n_leave1out_estimates,9
+predicted_crossing_median,0.3649508623
+predicted_crossing_q25,0.3643914856
+predicted_crossing_q75,0.3654055293
+heldout_crossing_median,0.3680932286
+heldout_crossing_q25,0.3665234876
+heldout_crossing_q75,0.3702775438
+median_abs_error,0.004714079453
+max_abs_error,0.03930991265

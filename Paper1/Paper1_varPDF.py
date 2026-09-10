@@ -176,10 +176,10 @@ for i in range(len(cases)):
     # ww_filt = ww_e[(anisotropy[cases[i]][:,:,:,1]<1) & (anisotropy[cases[i]][:,:,:,1]>0) & (dist[cases[i]][:,:,:,0]>40) & (dist[cases[i]][:,:,:,0]<40*15)]
     # uw_filt = uw_e[(anisotropy[cases[i]][:,:,:,1]<1) & (anisotropy[cases[i]][:,:,:,1]>0) & (dist[cases[i]][:,:,:,0]>40) & (dist[cases[i]][:,:,:,0]<40*15)]
     
-    uu_filt = uu_e[(abs(ResNorm[cases[i]])<10) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*15)]
-    vv_filt = vv_e[(abs(ResNorm[cases[i]])<10) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*15)]
-    ww_filt = ww_e[(abs(ResNorm[cases[i]])<10) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*15)]
-    uw_filt = uw_e[(abs(ResNorm[cases[i]])<10) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*15)]
+    uu_filt = uu_e[(abs(ResNorm[cases[i]])<5) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*5)]
+    vv_filt = vv_e[(abs(ResNorm[cases[i]])<5) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*5)]
+    ww_filt = ww_e[(abs(ResNorm[cases[i]])<5) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*5)]
+    uw_filt = uw_e[(abs(ResNorm[cases[i]])<5) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*5)]
     
     # uu_filt = uu_e[:,:,10:][(abs(ResNorm[cases[i]])[:,:,10:]<10)]
     # vv_filt = vv_e[:,:,10:][(abs(ResNorm[cases[i]])[:,:,10:]<10)]

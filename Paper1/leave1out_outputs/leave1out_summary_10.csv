@@ -1,0 +1,10 @@
+metric,value
+n_leave1out_estimates,9
+predicted_crossing_median,0.3877479585
+predicted_crossing_q25,0.3874663082
+predicted_crossing_q75,0.3881520826
+heldout_crossing_median,0.3781399766
+heldout_crossing_q25,0.3750524189
+heldout_crossing_q75,0.3811667454
+median_abs_error,0.01331916206
+max_abs_error,0.02904681142

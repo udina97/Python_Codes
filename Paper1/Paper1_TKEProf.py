@@ -50,14 +50,14 @@ for ax in axs.ravel():
 for i in range(len(cases)):
     if i == 0:
         lz = 0.96; nz = 384; dz = lz/nz; zi = 1000; canopyH = 39
-        prof = np.load(path_to_data + 'RedTKE_' + cases[i] + '.npy')
+        prof = np.load(path_to_data + 'RedTKE_' + cases[i] + '_Ug.npy')
         axs[0,0].plot(prof[0,:],(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='#0072B2')
         axs[0,0].plot(prof[1,:],(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='#E69F00')
         axs[0,0].plot(prof[2,:],(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='#CC79A7')
     elif i > 0 and i < 3:
         lz = 0.96; nz = 384; dz = lz/nz; zi = 1000; canopyH = 39
-        prof_p = np.load(path_to_data + 'RedTKE_' + cases[i] + '_p.npy')
-        prof_v = np.load(path_to_data + 'RedTKE_' + cases[i] + '_v.npy')
+        prof_p = np.load(path_to_data + 'RedTKE_' + cases[i] + '_p_Ug.npy')
+        prof_v = np.load(path_to_data + 'RedTKE_' + cases[i] + '_v_Ug.npy')
         axs[0,i].plot(prof_p[0,:],(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='#0072B2',ls='-')
         axs[0,i].plot(prof_p[1,:],(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='#E69F00',ls='-')
         axs[0,i].plot(prof_p[2,:],(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='#CC79A7',ls='-')
@@ -66,8 +66,8 @@ for i in range(len(cases)):
         axs[0,i].plot(prof_v[2,:],(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='#CC79A7',ls='--')
     elif i >= 3 and i < 5:
         lz = 1; nz = 256; dz = lz/nz; zi = 1000; canopyH = 39
-        prof_p = np.load(path_to_data + 'RedTKE_' + cases[i] + '_p.npy')
-        prof_f = np.load(path_to_data + 'RedTKE_' + cases[i] + '_f.npy')
+        prof_p = np.load(path_to_data + 'RedTKE_' + cases[i] + '_p_Ug.npy')
+        prof_f = np.load(path_to_data + 'RedTKE_' + cases[i] + '_f_Ug.npy')
         axs[1,i-3].plot(prof_f[0,:],(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='#0072B2',ls='-')
         axs[1,i-3].plot(prof_f[1,:],(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='#E69F00',ls='-')
         axs[1,i-3].plot(prof_f[2,:],(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='#CC79A7',ls='-')
@@ -76,8 +76,8 @@ for i in range(len(cases)):
         axs[1,i-3].plot(prof_p[2,:],(np.arange(0,Nz_SLayer)*dz + dz/2)/(canopyH/zi),c='#CC79A7',ls='--')
     else:
         z = np.arange(0.5,152.5,1)/15.3
-        prof_xy = np.load(path_to_data + 'RedTKE_' + cases[i] + '_xy.npy')
-        prof_tw = np.load(path_to_data + 'RedTKE_' + cases[i] + '_tw.npy')
+        prof_xy = np.load(path_to_data + 'RedTKE_' + cases[i] + '_xy_Ug.npy')
+        prof_tw = np.load(path_to_data + 'RedTKE_' + cases[i] + '_tw_Ug.npy')
         axs[1,i-3].plot(prof_xy[0,:],z,c='#0072B2',ls='-')
         axs[1,i-3].plot(prof_xy[1,:],z,c='#E69F00',ls='-')
         axs[1,i-3].plot(prof_xy[2,:],z,c='#CC79A7',ls='-')
@@ -94,18 +94,31 @@ for i in range(len(axs)):
         axs[i,j].axhline(1,c='k',ls='--')
         axs[i,j].axvline(0,c='k',ls='-')
         axs[i,j].grid(alpha=0.2)
-        axs[i,j].set_xlim(-9,15)
+        axs[i,j].set_xlim(-0.003,0.008)
     
-axs[-1,0].set_xlabel(r'$\left \langle \frac{\partial e}{\partial t} \right \rangle \frac{h_C}{u_*^3}$',fontsize=16)
-axs[-1,1].set_xlabel(r'$\left \langle \frac{\partial e}{\partial t} \right \rangle \frac{h_C}{u_*^3}$',fontsize=16)
-axs[-1,2].set_xlabel(r'$\left \langle \frac{\partial e}{\partial t} \right \rangle \frac{h_C}{u_*^3}$',fontsize=16)
+axs[-1,0].set_xlabel(r'$\left \langle \frac{\partial e}{\partial t} \right \rangle \frac{h_C}{U_G^3}$',fontsize=16)
+axs[-1,1].set_xlabel(r'$\left \langle \frac{\partial e}{\partial t} \right \rangle \frac{h_C}{U_G^3}$',fontsize=16)
+axs[-1,2].set_xlabel(r'$\left \langle \frac{\partial e}{\partial t} \right \rangle \frac{h_C}{U_G^3}$',fontsize=16)
 
 axs[0,0].tick_params(axis='y', which='major', labelsize=12)
 axs[1,0].tick_params(axis='y', which='major', labelsize=12)
 
 for i in range(3):
     axs[-1,i].tick_params(axis='x', which='major', labelsize=12)
+    
+from matplotlib.ticker import ScalarFormatter
 
-# plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'TKE_TwrProf_AllCases_colorblind.png',dpi=300,edgecolor='white',facecolor='white')
+
+class ZeroScalarFormatter(ScalarFormatter):
+    def __call__(self, x, pos=None):
+        if np.isclose(x, 0):
+            return "0"
+        return super().__call__(x, pos)
+    
+for ax in axs.ravel():
+    if ax.get_visible():
+        ax.xaxis.set_major_formatter(ZeroScalarFormatter())
+
+# plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'TKE_TwrProf_AllCases_colorblind_Ug.png',dpi=300,edgecolor='white',facecolor='white')
 
 plt.show()

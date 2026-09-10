@@ -25,10 +25,10 @@ from functions import get_dphidx,get_dphidy,get_dphidz,uvpnode2wnode,wnode2uvpno
 
 cases = ['Gap_12_9mps','Gap_8_9mps','Gap_4_9mps','Patch_12_9mps','Patch_8_9mps','Patch_4_9mps','ATTO','Sinusoidal','Flat']
 
-case = 6
+case = 0
 
 if case < 6:
-    path_to_data = '/uufs/chpc.utah.edu/common/home/calaf-group2/GiuliaData/TKE_BUDGET_AND_RAV/'
+    path_to_data = '/uufs/chpc.utah.edu/common/home/calaf-group2/Ben_research/GiuliaData/TKE_BUDGET_AND_RAV/'
     terms_bdg = xr.open_dataarray(path_to_data + cases[case] + '/TKE_terms.nc').data
     data = xr.open_dataarray(path_to_data + cases[case] + '/Data_Momentum_4TKE.nc').data
     anisotropy = xr.open_dataarray(path_to_data + cases[case] + '/anisotropy.nc').data
@@ -72,66 +72,78 @@ Nz_SLayer = 200
 
 #%%Plot TKE res vs yB for the RSL
 
-# fig, axs = plt.subplots(1, 1, figsize=(6, 6))
+fig, axs = plt.subplots(1, 1, figsize=(6, 6))
 
-# # Deep copy the arrays
-# tmpDIS = copy.deepcopy(terms_bdg[:, :, :, 11])
-# tmpRES = copy.deepcopy(terms_bdg[:, :, :, -1] + terms_bdg[:, :, :, 11])
-# tmpRES[abs(tmpRES) < 0.01*np.max(np.nanmedian(tmpRES,axis=(0,1)))] = 0
-# # Avoid divide-by-zero
-# with np.errstate(divide='ignore', invalid='ignore'):
-#     tmpNorm = np.where(tmpDIS != 0, tmpRES / np.abs(tmpDIS) * 100, np.nan)
+# Deep copy the arrays
+tmpDIS = copy.deepcopy(terms_bdg[:, :, :, 11])
+tmpRES = copy.deepcopy(terms_bdg[:, :, :, -1] + terms_bdg[:, :, :, 11])
+tmpRES[abs(tmpRES) < 0.01*np.max(np.nanmedian(tmpRES,axis=(0,1)))] = 0
+# Avoid divide-by-zero
+with np.errstate(divide='ignore', invalid='ignore'):
+    tmpNorm = np.where(tmpDIS != 0, tmpRES / np.abs(tmpDIS) * 100, np.nan)
 
-# # Select y_B and TKE slices
-# x_yB = anisotropy[:, :, 10:60, 1]
-# y_TKE = tmpNorm[:, :, 10:60]
+# Select y_B and TKE slices
+x_yB = anisotropy[:, :, 10:200, 1]
+y_TKE = tmpNorm[:, :, 10:200]
 
-# # Compute binned statistics
-# TKE_median = []
-# # TKE_std = []
-# TKE_q25 = []
-# TKE_q75 = []
-# yB_mean = []
+# Compute binned statistics
+TKE_median = []
+TKE_q25 = []
+TKE_q75 = []
+yB_mean = []
+bin_counts = []
 
-# j = 0.1
-# for i in range(28):
-#     if i == 0:
-#         mask = x_yB < j
-#         yB_mean.append(0.05)
-#     else:
-#         mask = (x_yB > j) & (x_yB < j + 0.025)
-#         yB_mean.append(j + 0.0125)
-#     TKE_vals = y_TKE[mask]
-#     TKE_median.append(np.nanmedian(TKE_vals))
-#     # TKE_std.append(np.nanstd(TKE_vals))
-#     TKE_q25.append(np.nanpercentile(TKE_vals, 25))
-#     TKE_q75.append(np.nanpercentile(TKE_vals, 75))
-#     j += 0.025
+j = 0.1
+for i in range(28):
+    if i == 0:
+        mask = x_yB < j
+        yB_mean.append(0.05)
+    else:
+        mask = (x_yB > j) & (x_yB < j + 0.025)
+        yB_mean.append(j + 0.0125)
 
-# # Plot results
-# axs.plot(yB_mean, TKE_median, c='k', marker='o')
-# axs.fill_between(yB_mean, np.array(TKE_q25), np.array(TKE_q75), alpha=0.5)
+    TKE_vals = y_TKE[mask]
 
-# axs.axhline(0, color='k', linestyle='-.')
-# axs.axvline(0.38, color='k', linestyle='-.')
-# axs.text(0.38 + 0.01, 200, 'yB = 0.38', rotation=90, va='center', ha='left', color='black')
-# axs.axvline(0.36, color='k', linestyle='-.')
-# axs.text(0.36 - 0.02, 200, 'yB = 0.36', rotation=90, va='center', ha='left', color='black')
+    # Count points in this bin
+    n_points = np.count_nonzero(~np.isnan(TKE_vals))
+    bin_counts.append(n_points)
 
-# axs.set_xlabel(r'$y_B$', fontsize=18)
-# axs.set_ylabel(r'$\frac{P-D}{|D|}$', fontsize=21)
-# axs.set_xlim(0.15, 0.6)
-# axs.set_ylim(-70, 250)
-# axs.tick_params(axis='x', labelsize=12)
-# axs.tick_params(axis='y', labelsize=12)
-# axs.set_title(f'{cases[case]}',fontsize=15)
+    print(
+        f"Bin {i:2d}: "
+        f"yB = {yB_mean[-1]:.4f}, "
+        f"N = {n_points}"
+    )
 
-# # Correlation text
-# # corr = np.corrcoef(x_yB.values.flatten(), y_TKE.flatten())[0, 1]
-# # axs.text(0.1, 0.9, f'r = {round(corr, 2)}', transform=axs.transAxes, fontsize=18)
+    TKE_median.append(np.nanmedian(TKE_vals))
+    TKE_q25.append(np.nanpercentile(TKE_vals, 25))
+    TKE_q75.append(np.nanpercentile(TKE_vals, 75))
 
-# plt.tight_layout()
-# plt.show()
+    j += 0.025
+
+# Plot results
+axs.plot(yB_mean, TKE_median, c='k', marker='o')
+axs.fill_between(yB_mean, np.array(TKE_q25), np.array(TKE_q75), alpha=0.5)
+
+axs.axhline(0, color='k', linestyle='-.')
+axs.axvline(0.38, color='k', linestyle='-.')
+axs.text(0.38 + 0.01, 200, 'yB = 0.38', rotation=90, va='center', ha='left', color='black')
+axs.axvline(0.36, color='k', linestyle='-.')
+axs.text(0.36 - 0.02, 200, 'yB = 0.36', rotation=90, va='center', ha='left', color='black')
+
+axs.set_xlabel(r'$y_B$', fontsize=18)
+axs.set_ylabel(r'$\frac{P-D}{|D|}$', fontsize=21)
+axs.set_xlim(0.15, 0.6)
+axs.set_ylim(-70, 250)
+axs.tick_params(axis='x', labelsize=12)
+axs.tick_params(axis='y', labelsize=12)
+axs.set_title(f'{cases[case]}',fontsize=15)
+
+# Correlation text
+# corr = np.corrcoef(x_yB.values.flatten(), y_TKE.flatten())[0, 1]
+# axs.text(0.1, 0.9, f'r = {round(corr, 2)}', transform=axs.transAxes, fontsize=18)
+
+plt.tight_layout()
+plt.show()
 
 #%%Save the profile
 

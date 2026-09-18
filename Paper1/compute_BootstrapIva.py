@@ -3,15 +3,17 @@
 """
 Pooled-profile bootstrap regression for yB-vs-normalized-TKE-residual.
 
-Each bootstrap realization samples 10,000 x-y profiles with replacement from
-each study case, extracts each sampled profile from canopy top to 10 canopy
-heights, pools all valid points from all cases, and fits one regression line
-
-    TKE_residual = m * yB + q
-
-The final plotted line is the pointwise median of the 1,000 fitted lines. The
-shading is the interquartile range of those lines. Crossover values are saved
-for all bootstrap realizations along with their median and interquartile range.
+Workflow:
+1. For each case, load yB and normalized TKE residual profiles from canopy top
+   to 5 canopy heights.
+2. For each bootstrap, sample Np profiles with replacement from every case.
+3. Pool all sampled points from all cases.
+4. Fit one equally case-weighted linear regression line using points in the
+   selected yB interval.
+5. In the same yB interval, compute 25th and 75th residual quantiles in bins
+   of width 0.025.
+6. Repeat Nb times.
+7. Plot the median regression line and the median lower/upper quantile curves.
 """
 
 from argparse import ArgumentParser
@@ -41,7 +43,6 @@ CASES = [
     "Sinusoidal",
     "Flat",
 ]
-LABELS = ["g1200", "g800", "g400", "i1200", "i800", "i400", "ATTO", "Sinusoidal", "Flat"]
 
 GAP_PATCH_DATA_ROOT = Path(
     "/uufs/chpc.utah.edu/common/home/calaf-group2/Ben_research/GiuliaData/"
@@ -55,50 +56,76 @@ OUTPUT_DIR = Path(
     "/uufs/chpc.utah.edu/common/home/u1450851/Python_Codes/Paper1/"
     "bootstrapIva_outputs"
 )
+PROFILE_DIR = Path(
+    "/uufs/chpc.utah.edu/common/home/calaf-group2/Ben_research/Paper1/Profiles"
+)
 
 ZI = 1000.0
 CANOPY_H = 39.0 / ZI
 CANOPY_H_METERS = CANOPY_H * ZI
+HEIGHT_MAX_MULTIPLIER = 6.0
 
-N_BOOTSTRAP = 1000
+N_BOOTSTRAP = 100
 N_SAMPLE_PROFILES = 10000
-RANDOM_SEED = 20260909
-MIN_VALID_POINTS = 10
-REQUIRE_POSITIVE_TO_NEGATIVE_CROSSING = True
-YB_FIT_LIMITS = (0.25, 0.45)
+RANDOM_SEED = 20260911
 
-YB_LINE = np.linspace(0.0, np.sqrt(3.0) / 2.0, 300)
+YB_FIT_LIMITS = (0.25, 0.45)
+YB_BIN_WIDTH = 0.025
+QUANTILE_LIMITS = (25.0, 75.0)
+
 YB_PLOT_LIMITS = (0.15, 0.60)
 TKE_PLOT_LIMITS = (-70, 250)
+
+PROFILE_COLORS = [
+    "green",
+    "limegreen",
+    "lightgreen",
+    "beige",
+    "khaki",
+    "gold",
+    "peachpuff",
+    "sandybrown",
+    "saddlebrown",
+]
+PROFILE_LABELS = [
+    "g1200",
+    "g800",
+    "g400",
+    "i1200",
+    "i800",
+    "i400",
+    "ATTO",
+    "Sinusoidal",
+    "Flat",
+]
 
 
 def parse_args():
     parser = ArgumentParser(
-        description=(
-            "Bootstrap one pooled yB-vs-normalized-TKE-residual regression line "
-            "from profile resampling across all Paper1 cases."
-        )
+        description="Bootstrap pooled profile clouds and fit one median regression line."
     )
     parser.add_argument("--n-bootstrap", type=int, default=N_BOOTSTRAP)
     parser.add_argument("--n-sample-profiles", type=int, default=N_SAMPLE_PROFILES)
     parser.add_argument("--seed", type=int, default=RANDOM_SEED)
-    parser.add_argument(
-        "--yb-min",
-        type=float,
-        default=YB_FIT_LIMITS[0],
-        help="Minimum yB value included in each regression fit. Default includes no lower cutoff.",
-    )
-    parser.add_argument(
-        "--yb-max",
-        type=float,
-        default=YB_FIT_LIMITS[1],
-        help="Maximum yB value included in each regression fit. Default includes no upper cutoff.",
-    )
+    parser.add_argument("--yb-min", type=float, default=YB_FIT_LIMITS[0])
+    parser.add_argument("--yb-max", type=float, default=YB_FIT_LIMITS[1])
+    parser.add_argument("--yb-bin-width", type=float, default=YB_BIN_WIDTH)
+    parser.add_argument("--iq-low", type=float, default=QUANTILE_LIMITS[0])
+    parser.add_argument("--iq-high", type=float, default=QUANTILE_LIMITS[1])
     parser.add_argument("--output-dir", type=Path, default=OUTPUT_DIR)
-    parser.add_argument("--show", action="store_true", help="Show the figure interactively after saving it.")
+    parser.add_argument("--show", action="store_true")
+
     args = parser.parse_args()
-    if args.yb_min is not None and args.yb_max is not None and args.yb_min >= args.yb_max:
+    if args.n_bootstrap <= 0:
+        parser.error("--n-bootstrap must be positive")
+    if args.n_sample_profiles <= 0:
+        parser.error("--n-sample-profiles must be positive")
+    if args.yb_min >= args.yb_max:
         parser.error("--yb-min must be smaller than --yb-max")
+    if args.yb_bin_width <= 0.0:
+        parser.error("--yb-bin-width must be positive")
+    if not 0.0 <= args.iq_low < args.iq_high <= 100.0:
+        parser.error("--iq-low and --iq-high must satisfy 0 <= low < high <= 100")
     return args
 
 
@@ -110,7 +137,6 @@ def load_case(case_name, case_index):
         case_dir = GAP_PATCH_DATA_ROOT / case_name
         terms_bdg = xr.open_dataarray(case_dir / "TKE_terms.nc").data
         anisotropy = xr.open_dataarray(case_dir / "anisotropy.nc").data
-        lx = ly = 2.0 * np.pi
         lz = 1.0
         topo_case = False
         mpi_proc = None
@@ -118,7 +144,6 @@ def load_case(case_name, case_index):
         case_dir = TOPO_DATA_ROOT / case_name
         terms_bdg = xr.open_dataarray(case_dir / "TKE_terms.nc").data
         anisotropy = xr.open_dataarray(case_dir / "anisotropy.nc").data
-        lx = ly = 2.88
         lz = 0.96
         topo_case = True
         mpi_proc = 32
@@ -135,8 +160,6 @@ def load_case(case_name, case_index):
         "ny": ny,
         "nz_data": nz_data,
         "nz_full": nz_full,
-        "dx": lx / nx,
-        "dy": ly / ny,
         "dz": dz,
         "topo_case": topo_case,
         "mpi_proc": mpi_proc,
@@ -144,7 +167,7 @@ def load_case(case_name, case_index):
 
 
 def compute_normalized_tke_residual(terms_bdg, topo_case, dist_terms=None):
-    """Compute normalized residual using the same conventions as the existing scripts."""
+    """Compute normalized residual using the existing Paper1 convention."""
     tmp_dis = np.array(terms_bdg[:, :, :, 11], copy=True)
 
     if topo_case:
@@ -168,7 +191,7 @@ def compute_normalized_tke_residual(terms_bdg, topo_case, dist_terms=None):
 
 
 def build_topography_distance(case_dir, nx, ny, nz_full, dz, mpi_proc):
-    """Distance above the local immersed-boundary interface, in meters."""
+    """Distance above local immersed-boundary interface, in meters."""
     phi = build_phi(str(case_dir / "phi_functions") + "/", nx, ny, nz_full, mpi_proc)
     intf, _ = build_intf(phi, dz)
     z_profile = np.arange(nz_full) * dz * ZI
@@ -176,100 +199,8 @@ def build_topography_distance(case_dir, nx, ny, nz_full, dz, mpi_proc):
     return dist_full[:, :, 5:]
 
 
-def empty_stats():
-    """Regression sufficient statistics for pooled valid points."""
-    return {
-        "n": 0,
-        "sum_x": 0.0,
-        "sum_y": 0.0,
-        "sum_xx": 0.0,
-        "sum_xy": 0.0,
-        "sum_yy": 0.0,
-    }
-
-
-def compute_column_stats(x_vals, y_vals, height_mask, yb_min=None, yb_max=None):
-    """Compute per-x-y-profile regression statistics over valid height levels."""
-    valid = height_mask & np.isfinite(x_vals) & np.isfinite(y_vals)
-    if yb_min is not None:
-        valid &= x_vals >= yb_min
-    if yb_max is not None:
-        valid &= x_vals <= yb_max
-
-    x_clean = np.where(valid, x_vals, 0.0)
-    y_clean = np.where(valid, y_vals, 0.0)
-
-    return {
-        "n": np.sum(valid, axis=2).astype(np.int64).ravel(),
-        "sum_x": np.sum(x_clean, axis=2).ravel(),
-        "sum_y": np.sum(y_clean, axis=2).ravel(),
-        "sum_xx": np.sum(x_clean * x_clean, axis=2).ravel(),
-        "sum_xy": np.sum(x_clean * y_clean, axis=2).ravel(),
-        "sum_yy": np.sum(y_clean * y_clean, axis=2).ravel(),
-    }
-
-
-def add_sampled_columns_to_stats(stats, column_stats, sampled_columns):
-    """Add sampled profile statistics to a pooled realization."""
-    weights = np.bincount(sampled_columns, minlength=column_stats["n"].size)
-    stats["n"] += int(np.dot(weights, column_stats["n"]))
-    stats["sum_x"] += float(np.dot(weights, column_stats["sum_x"]))
-    stats["sum_y"] += float(np.dot(weights, column_stats["sum_y"]))
-    stats["sum_xx"] += float(np.dot(weights, column_stats["sum_xx"]))
-    stats["sum_xy"] += float(np.dot(weights, column_stats["sum_xy"]))
-    stats["sum_yy"] += float(np.dot(weights, column_stats["sum_yy"]))
-    return stats
-
-
-def fit_from_stats(stats):
-    """
-    Fit y = m*x + q from sufficient statistics.
-
-    This matches the standardized total-least-squares fit used in the existing
-    bootstrap script, but avoids rebuilding the full sampled point cloud.
-    """
-    if stats["n"] < MIN_VALID_POINTS:
-        return np.nan, np.nan
-
-    n = float(stats["n"])
-    x_mean = stats["sum_x"] / n
-    y_mean = stats["sum_y"] / n
-
-    sxx = stats["sum_xx"] - stats["sum_x"] ** 2 / n
-    syy = stats["sum_yy"] - stats["sum_y"] ** 2 / n
-    sxy = stats["sum_xy"] - stats["sum_x"] * stats["sum_y"] / n
-
-    if (
-        sxx <= 0.0
-        or syy <= 0.0
-        or not np.isfinite(sxx)
-        or not np.isfinite(syy)
-        or not np.isfinite(sxy)
-        or np.isclose(sxy, 0.0)
-    ):
-        return np.nan, np.nan
-
-    slope = np.sign(sxy) * np.sqrt(syy / n) / np.sqrt(sxx / n)
-    intercept = y_mean - slope * x_mean
-
-    if not np.isfinite(slope) or not np.isfinite(intercept):
-        return np.nan, np.nan
-
-    return slope, intercept
-
-
-def crossing_from_fit(slope, intercept):
-    """Return yB crossing for the fitted line."""
-    valid_direction = (
-        slope < 0.0 if REQUIRE_POSITIVE_TO_NEGATIVE_CROSSING else slope != 0.0
-    )
-    if not np.isfinite(slope) or not np.isfinite(intercept) or not valid_direction:
-        return np.nan
-    return -intercept / slope
-
-
-def prepare_case(case_name, case_index, yb_min=None, yb_max=None):
-    """Load one case and reduce it to per-profile statistics."""
+def prepare_case(case_name, case_index):
+    """Return yB and residual profiles restricted to H through 5H."""
     meta = load_case(case_name, case_index)
     yb = meta["anisotropy"][:, :, :, 1]
 
@@ -282,231 +213,381 @@ def prepare_case(case_name, case_index, yb_min=None, yb_max=None):
             meta["dz"],
             meta["mpi_proc"],
         )
-        tke_norm = compute_normalized_tke_residual(
-            meta["terms_bdg"], meta["topo_case"], dist_terms=dist_terms
+        residual = compute_normalized_tke_residual(
+            meta["terms_bdg"],
+            meta["topo_case"],
+            dist_terms=dist_terms,
         )
         height_mask = (dist_terms >= CANOPY_H_METERS) & (
-            dist_terms <= 10.0 * CANOPY_H_METERS
+            dist_terms <= HEIGHT_MAX_MULTIPLIER * CANOPY_H_METERS
         )
+        yb_profiles = np.where(height_mask, yb, np.nan).reshape(-1, yb.shape[2])
+        residual_profiles = np.where(height_mask, residual, np.nan).reshape(-1, residual.shape[2])
     else:
-        tke_norm = compute_normalized_tke_residual(meta["terms_bdg"], meta["topo_case"])
+        residual = compute_normalized_tke_residual(meta["terms_bdg"], meta["topo_case"])
         z_uvp = np.arange(meta["nz_data"]) * meta["dz"] + 0.5 * meta["dz"]
-        z_indices = np.where((z_uvp >= CANOPY_H) & (z_uvp <= 10.0 * CANOPY_H))[0]
+        z_indices = np.where(
+            (z_uvp >= CANOPY_H) & (z_uvp <= HEIGHT_MAX_MULTIPLIER * CANOPY_H)
+        )[0]
         if z_indices.size == 0:
-            raise ValueError(f"No vertical indices found between H and 10H for {case_name}.")
+            raise ValueError(f"No vertical indices found between H and 5H for {case_name}.")
 
-        yb = yb[:, :, z_indices]
-        tke_norm = tke_norm[:, :, z_indices]
-        height_mask = np.ones_like(yb, dtype=bool)
-
-    column_stats = compute_column_stats(
-        yb,
-        tke_norm,
-        height_mask,
-        yb_min=yb_min,
-        yb_max=yb_max,
-    )
-    n_valid_columns = int(np.count_nonzero(column_stats["n"] > 0))
-    n_valid_points = int(np.sum(column_stats["n"]))
+        yb_profiles = yb[:, :, z_indices].reshape(-1, z_indices.size)
+        residual_profiles = residual[:, :, z_indices].reshape(-1, z_indices.size)
 
     return {
         "case": case_name,
-        "label": LABELS[case_index],
-        "n_columns": meta["nx"] * meta["ny"],
-        "n_valid_columns": n_valid_columns,
-        "n_valid_points": n_valid_points,
-        "column_stats": column_stats,
+        "yb_profiles": yb_profiles.astype(np.float32, copy=False),
+        "residual_profiles": residual_profiles.astype(np.float32, copy=False),
     }
 
 
-def run_bootstrap(case_data, n_bootstrap, n_sample_profiles, rng):
-    """Run pooled-profile bootstrap fits across all cases."""
-    slopes = np.full(n_bootstrap, np.nan)
-    intercepts = np.full(n_bootstrap, np.nan)
-    crossovers = np.full(n_bootstrap, np.nan)
-    n_points = np.zeros(n_bootstrap, dtype=np.int64)
+def make_yb_bins(yb_min, yb_max, bin_width):
+    """Build yB bin edges and centers."""
+    n_full_bins = int(np.floor((yb_max - yb_min) / bin_width + 1e-12))
+    edges = yb_min + np.arange(n_full_bins + 1) * bin_width
+    if edges.size == 0 or not np.isclose(edges[-1], yb_max):
+        edges = np.append(edges, yb_max)
+    centers = 0.5 * (edges[:-1] + edges[1:])
+    return edges, centers
 
-    for boot in range(n_bootstrap):
-        stats = empty_stats()
-        for case in case_data:
-            sampled_columns = rng.integers(
-                0,
-                case["n_columns"],
-                size=n_sample_profiles,
+
+def sample_case_points(case_data, n_sample_profiles, rng, yb_min, yb_max):
+    """Sample profiles from one case and return valid points inside the yB interval."""
+    n_profiles = case_data["yb_profiles"].shape[0]
+    sample_idx = rng.randint(0, n_profiles, size=n_sample_profiles)
+
+    yb = case_data["yb_profiles"][sample_idx].ravel()
+    residual = case_data["residual_profiles"][sample_idx].ravel()
+    valid = (
+        np.isfinite(yb)
+        & np.isfinite(residual)
+        & (yb >= yb_min)
+        & (yb <= yb_max)
+    )
+    return yb[valid], residual[valid]
+
+
+def fit_regression(yb, residual, weights):
+    """Fit residual = slope * yB + intercept by weighted linear regression."""
+    finite = np.isfinite(yb) & np.isfinite(residual) & np.isfinite(weights) & (weights > 0.0)
+    if np.count_nonzero(finite) < 2:
+        return np.nan, np.nan
+
+    x = yb[finite]
+    y = residual[finite]
+    w = weights[finite]
+    sum_w = np.sum(w)
+    if sum_w <= 0.0:
+        return np.nan, np.nan
+
+    x_mean = np.sum(w * x) / sum_w
+    y_mean = np.sum(w * y) / sum_w
+    x_centered = x - x_mean
+    denominator = np.sum(w * x_centered * x_centered)
+    if not np.isfinite(denominator) or np.isclose(denominator, 0.0):
+        return np.nan, np.nan
+
+    slope = np.sum(w * x_centered * (y - y_mean)) / denominator
+    intercept = y_mean - slope * x_mean
+    return float(slope), float(intercept)
+
+
+def zero_crossing(slope, intercept):
+    """Return yB where the fitted line crosses residual=0."""
+    if not np.isfinite(slope) or not np.isfinite(intercept) or slope == 0.0:
+        return np.nan
+    return float(-intercept / slope)
+
+
+def weighted_percentile(values, weights, quantiles):
+    """Compute weighted percentiles for one finite sample."""
+    valid = np.isfinite(values) & np.isfinite(weights) & (weights > 0.0)
+    if np.count_nonzero(valid) == 0:
+        return np.full(len(quantiles), np.nan)
+
+    values = values[valid]
+    weights = weights[valid]
+    order = np.argsort(values)
+    values = values[order]
+    weights = weights[order]
+    cumulative_weight = np.cumsum(weights)
+    targets = np.asarray(quantiles) / 100.0 * cumulative_weight[-1]
+    return np.interp(targets, cumulative_weight, values)
+
+
+def binned_quantiles(yb, residual, weights, bin_edges, quantiles):
+    """Compute equally case-weighted residual quantiles in yB bins."""
+    q_low = np.full(bin_edges.size - 1, np.nan)
+    q_high = np.full(bin_edges.size - 1, np.nan)
+
+    for i in range(bin_edges.size - 1):
+        if i == bin_edges.size - 2:
+            in_bin = (yb >= bin_edges[i]) & (yb <= bin_edges[i + 1])
+        else:
+            in_bin = (yb >= bin_edges[i]) & (yb < bin_edges[i + 1])
+
+        if np.count_nonzero(in_bin) > 0:
+            q_low[i], q_high[i] = weighted_percentile(
+                residual[in_bin],
+                weights[in_bin],
+                quantiles,
             )
-            add_sampled_columns_to_stats(stats, case["column_stats"], sampled_columns)
 
-        slope, intercept = fit_from_stats(stats)
-        slopes[boot] = slope
-        intercepts[boot] = intercept
-        crossovers[boot] = crossing_from_fit(slope, intercept)
-        n_points[boot] = stats["n"]
+    return q_low, q_high
 
-        if (boot + 1) % 100 == 0 or boot == n_bootstrap - 1:
-            print(f"  completed {boot + 1}/{n_bootstrap} bootstrap fits")
 
-    line_ensemble = slopes[:, np.newaxis] * YB_LINE[np.newaxis, :] + intercepts[:, np.newaxis]
-    line_median = np.nanmedian(line_ensemble, axis=0)
-    line_q25 = np.nanpercentile(line_ensemble, 25, axis=0)
-    line_q75 = np.nanpercentile(line_ensemble, 75, axis=0)
+def nanmedian_columns(values):
+    """Column-wise nanmedian without warnings for columns that are all NaN."""
+    med = np.full(values.shape[1], np.nan)
+    finite_cols = np.any(np.isfinite(values), axis=0)
+    if np.any(finite_cols):
+        med[finite_cols] = np.nanmedian(values[:, finite_cols], axis=0)
+    return med
+
+
+def finite_median(values):
+    values = values[np.isfinite(values)]
+    if values.size == 0:
+        return np.nan
+    return float(np.median(values))
+
+
+def run_bootstrap(case_profiles, args, rng, bin_edges, bin_centers):
+    slopes = np.full(args.n_bootstrap, np.nan)
+    intercepts = np.full(args.n_bootstrap, np.nan)
+    crossings = np.full(args.n_bootstrap, np.nan)
+    n_points = np.zeros(args.n_bootstrap, dtype=int)
+    n_active_cases = np.zeros(args.n_bootstrap, dtype=int)
+    q_low_all = np.full((args.n_bootstrap, bin_centers.size), np.nan)
+    q_high_all = np.full((args.n_bootstrap, bin_centers.size), np.nan)
+
+    for boot in range(args.n_bootstrap):
+        yb_parts = []
+        residual_parts = []
+        weight_parts = []
+
+        for case_data in case_profiles:
+            yb, residual = sample_case_points(
+                case_data,
+                args.n_sample_profiles,
+                rng,
+                args.yb_min,
+                args.yb_max,
+            )
+            if yb.size == 0:
+                continue
+
+            yb_parts.append(yb)
+            residual_parts.append(residual)
+            weight_parts.append(np.full(yb.size, 1.0 / yb.size))
+
+        if not yb_parts:
+            continue
+        yb_pool = np.concatenate(yb_parts)
+        residual_pool = np.concatenate(residual_parts)
+        weights_pool = np.concatenate(weight_parts)
+        n_points[boot] = yb_pool.size
+        n_active_cases[boot] = len(yb_parts)
+
+        slopes[boot], intercepts[boot] = fit_regression(yb_pool, residual_pool, weights_pool)
+        crossings[boot] = zero_crossing(slopes[boot], intercepts[boot])
+        q_low_all[boot], q_high_all[boot] = binned_quantiles(
+            yb_pool,
+            residual_pool,
+            weights_pool,
+            bin_edges,
+            (args.iq_low, args.iq_high),
+        )
+
+        if (boot + 1) % 10 == 0 or boot == args.n_bootstrap - 1:
+            print(f"  completed {boot + 1}/{args.n_bootstrap} bootstraps")
+
+    median_slope = finite_median(slopes)
+    median_intercept = finite_median(intercepts)
+    line_yb = np.linspace(args.yb_min, args.yb_max, 200)
+    median_line = median_slope * line_yb + median_intercept
+    median_line_crossing = zero_crossing(median_slope, median_intercept)
 
     return {
         "slopes": slopes,
         "intercepts": intercepts,
-        "crossovers": crossovers,
+        "crossings": crossings,
         "n_points": n_points,
-        "line_yb": YB_LINE,
-        "line_median": line_median,
-        "line_q25": line_q25,
-        "line_q75": line_q75,
-        "n_valid_bootstrap": int(np.count_nonzero(np.isfinite(crossovers))),
-        "crossover_median": float(np.nanmedian(crossovers)),
-        "crossover_q25": float(np.nanpercentile(crossovers, 25)),
-        "crossover_q75": float(np.nanpercentile(crossovers, 75)),
-        "slope_median": float(np.nanmedian(slopes)),
-        "intercept_median": float(np.nanmedian(intercepts)),
+        "n_active_cases": n_active_cases,
+        "line_yb": line_yb,
+        "median_line": median_line,
+        "median_slope": median_slope,
+        "median_intercept": median_intercept,
+        "median_line_crossing": median_line_crossing,
+        "bin_edges": bin_edges,
+        "bin_centers": bin_centers,
+        "q_low_all": q_low_all,
+        "q_high_all": q_high_all,
+        "q_low_median": nanmedian_columns(q_low_all),
+        "q_high_median": nanmedian_columns(q_high_all),
     }
 
 
-def save_crossovers_csv(result, output_dir):
-    """Save one row per bootstrap fit, with crossover summary columns included."""
+def save_crossovers(result, output_dir):
     path = output_dir / "bootstrapIva_crossovers.csv"
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(
-            [
-                "bootstrap",
-                "n_points",
-                "slope",
-                "intercept",
-                "crossover",
-                "crossover_median",
-                "crossover_q25",
-                "crossover_q75",
-            ]
+            ["bootstrap", "n_points", "n_active_cases", "slope", "intercept", "zero_crossing"]
         )
-        for boot, (n_points, slope, intercept, crossover) in enumerate(
-            zip(
-                result["n_points"],
-                result["slopes"],
-                result["intercepts"],
-                result["crossovers"],
-            ),
-            start=1,
-        ):
+        for i in range(result["crossings"].size):
             writer.writerow(
                 [
-                    boot,
-                    n_points,
-                    f"{slope:.10g}",
-                    f"{intercept:.10g}",
-                    f"{crossover:.10g}",
-                    f"{result['crossover_median']:.10g}",
-                    f"{result['crossover_q25']:.10g}",
-                    f"{result['crossover_q75']:.10g}",
+                    i + 1,
+                    result["n_points"][i],
+                    result["n_active_cases"][i],
+                    f"{result['slopes'][i]:.10g}",
+                    f"{result['intercepts'][i]:.10g}",
+                    f"{result['crossings'][i]:.10g}",
                 ]
             )
     return path
 
 
-def save_summary_csv(
-    case_data,
-    result,
-    output_dir,
-    n_bootstrap,
-    n_sample_profiles,
-    seed,
-    yb_min,
-    yb_max,
-):
-    """Save concise run metadata and crossover summary."""
+def save_plot_data(result, output_dir):
+    path = output_dir / "bootstrapIva_plot_data.npz"
+    np.savez(
+        path,
+        line_yb=result["line_yb"],
+        median_line=result["median_line"],
+        median_slope=result["median_slope"],
+        median_intercept=result["median_intercept"],
+        median_line_crossing=result["median_line_crossing"],
+        bin_edges=result["bin_edges"],
+        bin_centers=result["bin_centers"],
+        q_low_median=result["q_low_median"],
+        q_high_median=result["q_high_median"],
+        slopes=result["slopes"],
+        intercepts=result["intercepts"],
+        crossings=result["crossings"],
+        n_points=result["n_points"],
+        n_active_cases=result["n_active_cases"],
+        q_low_all=result["q_low_all"],
+        q_high_all=result["q_high_all"],
+    )
+    return path
+
+
+def save_plot_data_csv(result, output_dir):
+    path = output_dir / "bootstrapIva_plot_data.csv"
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(
+            [
+                "yB_bin_left",
+                "yB_bin_right",
+                "yB_bin_center",
+                "median_regression_at_bin_center",
+                "q_low_median",
+                "q_high_median",
+            ]
+        )
+        for i, center in enumerate(result["bin_centers"]):
+            writer.writerow(
+                [
+                    f"{result['bin_edges'][i]:.10g}",
+                    f"{result['bin_edges'][i + 1]:.10g}",
+                    f"{center:.10g}",
+                    f"{result['median_slope'] * center + result['median_intercept']:.10g}",
+                    f"{result['q_low_median'][i]:.10g}",
+                    f"{result['q_high_median'][i]:.10g}",
+                ]
+            )
+    return path
+
+
+def save_summary(result, args, output_dir):
     path = output_dir / "bootstrapIva_summary.csv"
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(["metric", "value"])
-        writer.writerow(["n_bootstrap", n_bootstrap])
-        writer.writerow(["n_sample_profiles_per_case", n_sample_profiles])
-        writer.writerow(["random_seed", seed])
-        writer.writerow(["height_range", "H_to_10H"])
-        writer.writerow(["yb_fit_min", "" if yb_min is None else f"{yb_min:.10g}"])
-        writer.writerow(["yb_fit_max", "" if yb_max is None else f"{yb_max:.10g}"])
-        writer.writerow(["n_cases", len(case_data)])
-        writer.writerow(["n_valid_bootstrap_crossovers", result["n_valid_bootstrap"]])
-        writer.writerow(["crossover_median", f"{result['crossover_median']:.10g}"])
-        writer.writerow(["crossover_q25", f"{result['crossover_q25']:.10g}"])
-        writer.writerow(["crossover_q75", f"{result['crossover_q75']:.10g}"])
-        writer.writerow(["slope_median", f"{result['slope_median']:.10g}"])
-        writer.writerow(["intercept_median", f"{result['intercept_median']:.10g}"])
-        for case in case_data:
-            writer.writerow([f"{case['label']}_valid_profiles", case["n_valid_columns"]])
-            writer.writerow([f"{case['label']}_valid_points", case["n_valid_points"]])
+        writer.writerow(["n_bootstrap", args.n_bootstrap])
+        writer.writerow(["n_sample_profiles_per_case", args.n_sample_profiles])
+        writer.writerow(["height_range", "H_to_5H"])
+        writer.writerow(["regression_fit", "equally_case_weighted_linear_regression"])
+        writer.writerow(["quantile_weighting", "equally_case_weighted"])
+        writer.writerow(["yb_min", f"{args.yb_min:.10g}"])
+        writer.writerow(["yb_max", f"{args.yb_max:.10g}"])
+        writer.writerow(["yb_bin_width", f"{args.yb_bin_width:.10g}"])
+        writer.writerow(["quantile_low_percent", f"{args.iq_low:.10g}"])
+        writer.writerow(["quantile_high_percent", f"{args.iq_high:.10g}"])
+        writer.writerow(["median_slope", f"{result['median_slope']:.10g}"])
+        writer.writerow(["median_intercept", f"{result['median_intercept']:.10g}"])
+        writer.writerow(["median_line_zero_crossing", f"{result['median_line_crossing']:.10g}"])
+        writer.writerow(["bootstrap_zero_crossing_median", f"{finite_median(result['crossings']):.10g}"])
     return path
 
 
-def save_line_csv(result, output_dir):
-    """Save the median regression line and its interquartile band."""
-    path = output_dir / "bootstrapIva_regression_line.csv"
-    with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.writer(handle)
-        writer.writerow(["yB", "line_median", "line_q25", "line_q75"])
-        for row in zip(
-            result["line_yb"],
-            result["line_median"],
-            result["line_q25"],
-            result["line_q75"],
-        ):
-            writer.writerow([f"{value:.10g}" for value in row])
-    return path
+def plot_regressionline_case_medians(ax):
+    """Overlay the saved per-case median profiles from RegressionLine.py."""
+    for case_name, color, label in zip(CASES, PROFILE_COLORS, PROFILE_LABELS):
+        prof = np.load(PROFILE_DIR / f"ResTKEvsYB_{case_name}_Q.npy")
+        ax.plot(prof[3, :], prof[0, :], c=color, label=label)
+        ax.fill_between(
+            prof[3, :],
+            np.array(prof[1, :]),
+            np.array(prof[2, :]),
+            alpha=0.1,
+            color=color,
+        )
 
 
-def save_npz(result, output_dir):
-    """Save detailed arrays for reuse without reparsing CSV files."""
-    path = output_dir / "bootstrapIva_results.npz"
-    np.savez(
-        path,
-        slopes=result["slopes"],
-        intercepts=result["intercepts"],
-        crossovers=result["crossovers"],
-        n_points=result["n_points"],
-        line_yb=result["line_yb"],
-        line_median=result["line_median"],
-        line_q25=result["line_q25"],
-        line_q75=result["line_q75"],
+def extend_center_values_to_edges(bin_edges, bin_centers, values):
+    """Extend center-sampled bin values smoothly to the first and last bin edges."""
+    return (
+        np.concatenate(([bin_edges[0]], bin_centers, [bin_edges[-1]])),
+        np.concatenate(([values[0]], values, [values[-1]])),
     )
-    return path
 
 
 def plot_result(result, output_dir, show=False):
-    """Plot the median pooled bootstrap regression line and interquartile shading."""
-    fig, axs = plt.subplots(1, 1, tight_layout=True, figsize=(8, 5))
+    fig, ax = plt.subplots(1, 1, tight_layout=True, figsize=(8, 5))
 
-    axs.fill_between(
-        result["line_yb"],
-        result["line_q25"],
-        result["line_q75"],
+    plot_regressionline_case_medians(ax)
+
+    q_x, q_low = extend_center_values_to_edges(
+        result["bin_edges"],
+        result["bin_centers"],
+        result["q_low_median"],
+    )
+    _, q_high = extend_center_values_to_edges(
+        result["bin_edges"],
+        result["bin_centers"],
+        result["q_high_median"],
+    )
+    ax.fill_between(
+        q_x,
+        q_low,
+        q_high,
         color="0.65",
         alpha=0.35,
-        label="IQR",
+        label="_nolegend_",
     )
-    axs.plot(
+    ax.plot(
         result["line_yb"],
-        result["line_median"],
+        result["median_line"],
         color="black",
         linewidth=2.0,
-        label="Median bootstrap line",
+        label="_nolegend_",
     )
-    axs.axhline(0, color="k", linestyle=":")
-    axs.axvline(result["crossover_median"], color="k", linestyle="--", linewidth=1.0)
+    ax.axhline(0, color="k", linestyle=":")
+    ax.axvline(result["median_line_crossing"], color="k", linestyle="--", linewidth=1.0)
 
-    axs.set_xlabel(r"$y_B$", fontsize=18)
-    axs.set_ylabel(r"$\frac{P-\varepsilon}{|\varepsilon|}$", fontsize=21)
-    axs.set_xlim(*YB_PLOT_LIMITS)
-    axs.set_ylim(*TKE_PLOT_LIMITS)
-    axs.tick_params(axis="x", labelsize=12)
-    axs.tick_params(axis="y", labelsize=12)
-    axs.legend(loc="best", fontsize=12)
+    ax.set_xlabel(r"$y_B$", fontsize=18)
+    ax.set_ylabel(r"$\frac{P-\varepsilon}{|\varepsilon|}$", fontsize=21)
+    ax.set_xlim(*YB_PLOT_LIMITS)
+    ax.set_ylim(*TKE_PLOT_LIMITS)
+    ax.tick_params(axis="x", labelsize=12)
+    ax.tick_params(axis="y", labelsize=12)
+    ax.legend(loc="center left", bbox_to_anchor=(1, 0.5), fontsize=12)
 
-    path = output_dir / "bootstrapIva_regression_line.png"
+    path = output_dir / "bootstrapIva_regression_quantiles.png"
     fig.savefig(path, dpi=300, edgecolor="white", facecolor="white")
     if show:
         plt.show()
@@ -518,58 +599,45 @@ def plot_result(result, output_dir, show=False):
 def main():
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    rng = np.random.default_rng(args.seed)
 
-    case_data = []
+    rng = np.random.RandomState(args.seed)
+
+    bin_edges, bin_centers = make_yb_bins(args.yb_min, args.yb_max, args.yb_bin_width)
+
+    case_profiles = []
     for case_index, case_name in enumerate(CASES):
-        print(f"Preparing {case_name} ({case_index + 1}/{len(CASES)})")
-        prepared = prepare_case(
-            case_name,
-            case_index,
-            yb_min=args.yb_min,
-            yb_max=args.yb_max,
-        )
-        case_data.append(prepared)
-        print(
-            f"  valid profiles={prepared['n_valid_columns']}, "
-            f"valid points={prepared['n_valid_points']}"
-        )
+        print(f"Loading {case_name} ({case_index + 1}/{len(CASES)})")
+        case_data = prepare_case(case_name, case_index)
+        case_profiles.append(case_data)
+        print(f"  profiles: {case_data['yb_profiles'].shape[0]}")
 
     print(
-        f"\nRunning {args.n_bootstrap} pooled bootstrap fits with "
+        f"\nRunning {args.n_bootstrap} bootstraps with "
         f"{args.n_sample_profiles} profiles per case."
     )
-    result = run_bootstrap(
-        case_data,
-        args.n_bootstrap,
-        args.n_sample_profiles,
-        rng,
+    print(
+        f"Height range: H to {HEIGHT_MAX_MULTIPLIER:g}H; "
+        f"yB fit/bin range: {args.yb_min:g} to {args.yb_max:g}; "
+        f"bin width: {args.yb_bin_width:g}"
     )
+    print("Regression: equally case-weighted linear regression")
 
-    crossovers_path = save_crossovers_csv(result, args.output_dir)
-    summary_path = save_summary_csv(
-        case_data,
-        result,
-        args.output_dir,
-        args.n_bootstrap,
-        args.n_sample_profiles,
-        args.seed,
-        args.yb_min,
-        args.yb_max,
-    )
-    line_csv_path = save_line_csv(result, args.output_dir)
-    npz_path = save_npz(result, args.output_dir)
+    result = run_bootstrap(case_profiles, args, rng, bin_edges, bin_centers)
+
+    crossovers_path = save_crossovers(result, args.output_dir)
+    plot_npz_path = save_plot_data(result, args.output_dir)
+    plot_csv_path = save_plot_data_csv(result, args.output_dir)
+    summary_path = save_summary(result, args, args.output_dir)
     figure_path = plot_result(result, args.output_dir, show=args.show)
 
-    print("\nPooled bootstrap crossover yB median/IQR:")
-    print(
-        f"  {result['crossover_median']:.4f} "
-        f"[{result['crossover_q25']:.4f}, {result['crossover_q75']:.4f}]"
-    )
-    print(f"\nSaved crossover CSV to {crossovers_path}")
-    print(f"Saved summary CSV to {summary_path}")
-    print(f"Saved line CSV to {line_csv_path}")
-    print(f"Saved detailed arrays to {npz_path}")
+    print("\nMedian regression:")
+    print(f"  slope: {result['median_slope']:.6g}")
+    print(f"  intercept: {result['median_intercept']:.6g}")
+    print(f"  zero crossing: {result['median_line_crossing']:.6g}")
+    print(f"\nSaved crossovers to {crossovers_path}")
+    print(f"Saved reusable plot arrays to {plot_npz_path}")
+    print(f"Saved reusable plot CSV to {plot_csv_path}")
+    print(f"Saved summary to {summary_path}")
     print(f"Saved figure to {figure_path}")
 
 

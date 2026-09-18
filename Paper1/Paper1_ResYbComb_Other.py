@@ -5,7 +5,7 @@ Created on Mon Sep 22 13:37:32 2025
 
 @author: u1450851
 """
-
+#%%
 #Libraries and Functions
 import numpy as np
 import matplotlib.pyplot as plt
@@ -66,11 +66,12 @@ directory = '/uufs/chpc.utah.edu/common/home/calaf-group2/Ben_research/Sims/'
 
 from matplotlib.transforms import ScaledTranslation
 import matplotlib.gridspec as gridspec
+from matplotlib.ticker import ScalarFormatter
 
 levels=[-100,-1,1,100]
 levels_2 = [0.37]
 # levels_3 = [-11,-9,-7,-5,-3,-1,1,3,5,7,9,11]
-levels_3 = [-1,-0.8,-0.6,-0.4,-0.2,0.2,0.4,0.6,0.8,1]
+levels_3 = [-0.0005,-0.0003,-0.0001,0.0001,0.0003,0.0005]
 levels_yb = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8]
 colors=['blue','white','red']
 labels = ["a1)", "a2)", "a3)", "b1)", "b2)",'b3)','c1)','c2)','c3)','d1)','d2)','d3)','e1)','e2)','e3)']  # Subplot labels
@@ -111,23 +112,19 @@ zi_G = 1000
 Hcanopy_G = 39/zi_G
 
 for i in range(len(cases)):
-    path = '/uufs/chpc.utah.edu/common/home/calaf-group2/GiuliaData/TKE_BUDGET_AND_RAV/'
+    path = '/uufs/chpc.utah.edu/common/home/calaf-group2/Ben_research/GiuliaData/TKE_BUDGET_AND_RAV/'
     data = xr.open_dataarray(path+cases[i]+'/Data_Momentum_4TKE.nc')
     terms_ptb = xr.open_dataarray(path+cases[i]+'/terms_ptb.nc')
     terms_bdg = xr.open_dataarray(path+cases[i] + '/TKE_terms.nc')
     anisotropy = xr.open_dataarray(path+cases[i] + '/anisotropy.nc')
-    Res = (terms_bdg.data[:,:,:,-1]+terms_bdg.data[:,:,:,11])#*(Hcanopy)/(ustar[:,:,np.newaxis]**3)
+    Res = terms_bdg.data[:,:,:,-1] + terms_bdg.data[:,:,:,11]
     # ResNorm[(abs(ResNorm) < 50)] = 0
 
-    T_13 = wnode2uvpnode(((data.data[:,:,:,8]) - uvpnode2wnode(data.data[:,:,:,0])*(data.data[:,:,:,2]) - (data.data[:,:,:,23])))
-    T_23 = wnode2uvpnode(((data.data[:,:,:,9]) - uvpnode2wnode(data.data[:,:,:,1])*(data.data[:,:,:,2]) - (data.data[:,:,:,24])))
+    Ug_G = np.nanmean(np.sqrt(data.data[:, :, -1, 0]**2 + data.data[:, :, -1, 1]**2))
+    if not np.isfinite(Ug_G) or Ug_G == 0:
+        raise ValueError(f'Invalid Ug for {cases[i]}: {Ug_G}')
 
-    cov_turb = -np.sqrt((T_13)**2 + (T_23)**2)
-    ustar_G = np.sqrt(-cov_turb[:, :, 10])  # slice at hc_n height
-
-    del T_13,T_23,cov_turb
-
-    ResNorm = Res*(Hcanopy_G)/(ustar_G[:,:,np.newaxis]**3)
+    ResNorm = Res*(Hcanopy_G)/(Ug_G**3)
     
     p1 = axs[i][0].contourf(x_G,z_uvp_G/Hcanopy_G,ResNorm[:,yslice,:].T,cmap='bwr',levels=levels_3,extend='both')
     p1.cmap.set_under('blue')
@@ -158,12 +155,13 @@ for i in range(len(cases)):
     
 cbar_ax = fig.add_axes([0.083, 0.07, 0.28, 0.01])  # Position and size of the colorbar
 cbar1 = fig.colorbar(p1, cax=cbar_ax, orientation="horizontal")
-cbar1.set_label(r"$R\cdot\frac{h_C}{u_{*}^{3}}$ ", fontsize=14, labelpad=5, rotation=360, rotation_mode='anchor')  # Add label to colorbar if needed
+cbar1.set_label(r"$R\cdot\frac{h_C}{U_g^{3}}$ ", fontsize=14, labelpad=5, rotation=360, rotation_mode='anchor')  # Add label to colorbar if needed
 cbar1.ax.tick_params(labelsize=9)  # Set colorbar tick label size
-# cbar1.set_ticks([-1, -0.8, -0.6, -0.4, -0.2, 0.2, 0.4, 0.6, 0.8, 1])
-# cbar1.set_ticklabels(['-1', '-0.8', '-0.6', '-0.4', '-0.2', '0.2', '0.4', '0.6', '0.8', '1'])
-cbar1.set_ticks([-0.9, -0.6, -0.3, 0.3, 0.6, 0.9])
-cbar1.set_ticklabels(['-0.9', '-0.6', '-0.3', '0.3', '0.6', '0.9'])
+cbar1.set_ticks([-0.0005, -0.0003, -0.0001, 0.0001, 0.0003, 0.0005])
+cbar1.formatter = ScalarFormatter(useMathText=True)
+cbar1.formatter.set_scientific(True)
+cbar1.formatter.set_powerlimits((-4, -4))
+cbar1.update_ticks()
 
 cbar_ax = fig.add_axes([0.39, 0.07, 0.28, 0.01])  # Position and size of the colorbar
 cbar1 = fig.colorbar(sc2, cax=cbar_ax, orientation="horizontal")
@@ -204,6 +202,8 @@ for m in range(4):
                        va="bottom", ha="left", fontfamily="serif")
         l += 1
         
-# plt.savefig(pathFig + 'ResYB_Combo_Other.png',dpi=300,facecolor='None', edgecolor='None')
+plt.savefig(pathFig + 'ResYB_Combo_Other_Ug.png',dpi=300,facecolor='None', edgecolor='None')
 
 plt.show()
+
+# %%

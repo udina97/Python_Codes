@@ -17,6 +17,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
+from matplotlib.ticker import ScalarFormatter
 from matplotlib.transforms import ScaledTranslation
 
 FUNCTIONS_DIR = '/uufs/chpc.utah.edu/common/home/u1450851/Python_Codes/functions/'
@@ -318,12 +319,15 @@ def format_figure(fig, axs, p1, sc2, p2):
     cbar1 = fig.colorbar(p1, cax=cbar_ax, orientation='horizontal')
     cbar1.set_label(r'$R\cdot\frac{h_C}{U_g^{3}}$ ', fontsize=14, labelpad=5, rotation=360, rotation_mode='anchor')
     cbar1.ax.tick_params(labelsize=9)
-    cbar1.set_ticks([-0.003, -0.002, -0.001, 0.001, 0.002, 0.003])
-    cbar1.set_ticklabels(['-0.003', '-0.002', '-0.001', '0.001', '0.002', '0.003'])
+    cbar1.set_ticks([-0.0005, -0.0003, -0.0001, 0.0001, 0.0003, 0.0005])
+    cbar1.formatter = ScalarFormatter(useMathText=True)
+    cbar1.formatter.set_scientific(True)
+    cbar1.formatter.set_powerlimits((-4, -4))
+    cbar1.update_ticks()
 
     cbar_ax = fig.add_axes([0.39, 0.07, 0.28, 0.01])
     cbar1 = fig.colorbar(sc2, cax=cbar_ax, orientation='horizontal')
-    cbar1.set_label(r'$yB$', fontsize=14, labelpad=5, rotation=360, rotation_mode='anchor')
+    cbar1.set_label(r'$y_B$', fontsize=14, labelpad=5, rotation=360, rotation_mode='anchor')
     cbar1.ax.tick_params(labelsize=9)
 
     cbar_ax = fig.add_axes([0.70, 0.07, 0.28, 0.01])
@@ -400,8 +404,8 @@ def main():
     cmap = ColorAnisotropy()
     pcolor_settings = {
         'levels': [-100, -1, 1, 100],
-        'levels_2': [0.38],
-        'levels_3': [-0.001, -0.0005, -0.0001, 0.0001, 0.0005, 0.001],
+        'levels_2': [0.37],
+        'levels_3': [-0.0005, -0.0003, -0.0001, 0.0001, 0.0003, 0.0005],
         'levels_yb': [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
         'colors': ['blue', 'white', 'red'],
     }
@@ -420,7 +424,7 @@ def main():
 
     format_figure(fig, axs, p1, sc2, p2)
 
-    # plt.savefig(PATH_FIG + 'ResYB_Combo_All_Ug.png', dpi=300, facecolor='None', edgecolor='None')
+    plt.savefig(PATH_FIG + 'ResYB_Combo_All_Ug.png', dpi=300, facecolor='None', edgecolor='None')
     plt.show()
 
 

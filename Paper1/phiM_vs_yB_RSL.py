@@ -5,6 +5,7 @@ Created on Wed Dec  3 14:55:02 2025
 
 @author: u1450851
 """
+#%%
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -33,7 +34,7 @@ def compute_ustar_G(Nz_SLayer, z_d, u, v, twr=False):
     kappa = 0.4
 
     # Levels to use for logarithmic fit
-    fit_levels = [50, 60, 70, 90]
+    fit_levels = [80, 90, 100]#, 100]
 
     z_data = z_d[fit_levels]
     U_data = U_mean[fit_levels]
@@ -91,16 +92,14 @@ def compute_d_twr_G(data, coord, height, dz, zi, u_scale, LAD):
 
     return d_dim
 
-def compute_ustar(Nz_SLayer, z_d, dist, u, v, twr=False):    
+def compute_ustar(Nz_SLayer, z_d, dist, u, v, fit_levels, twr=False):    
     kappa = 0.4
     z_start = np.argmax(dist > 0) - 5
 
     # Compute velocity magnitude and restrict to surface layer
     U = np.sqrt(u**2 + v**2)
     U_mean = U[z_start:z_start+Nz_SLayer]
-
-    # Levels to use for logarithmic fit
-    fit_levels = [100, 110, 120, 130]
+    fit_levels = np.asarray(fit_levels, dtype=int)
 
     z_data = z_d[fit_levels]
     U_data = U_mean[fit_levels]
@@ -123,6 +122,11 @@ def compute_ustar(Nz_SLayer, z_d, dist, u, v, twr=False):
 
 cases = ['Gap_8_9mps','Patch_8_9mps','ATTO','Sinusoidal','Flat','simulation_G']
 titles = ['g800','i800','ATTO','Sinusoidal','Flat','Urban']
+ben_topography_fit_levels = {
+    'ATTO': [160, 170, 180],
+    'Sinusoidal': [160, 170, 180],
+    'Flat': [100, 110, 120],
+}
 phi_prof = dict()
 aniso_prof= dict()
 tke_prof = dict()
@@ -358,7 +362,7 @@ for case in range(len(cases)):
             z_d = (z - ((d_dim_p[k])/zi))
             
             [z0hi[k],ustar[k],U_mean,U_data,z_data,u_fit] = compute_ustar(Nz_SLayer,z_d,dist[loc[0],loc[1],:],data.data[loc[0],loc[1],:,0],\
-                                                                    data.data[loc[0],loc[1],:,1],True)
+                                                                    data.data[loc[0],loc[1],:,1],ben_topography_fit_levels[cases[case]],True)
             
             phi_m_2D[k,:] = phi_m_loc(nx,ny,Nz_SLayer,z_d,data.data[loc[0],loc[1],z_start:z_start+Nz_SLayer,0],data.data[loc[0],loc[1],z_start:z_start+Nz_SLayer,1],\
                                       data.data[loc[0],loc[1],z_start:z_start+Nz_SLayer,12],data.data[loc[0],loc[1],z_start:z_start+Nz_SLayer,15],ustar[k])
@@ -408,7 +412,7 @@ for case in range(len(cases)):
             z_d = (z - ((d_dim_v[k])/zi))
             
             [z0hi[k],ustar[k],U_mean,U_data,z_data,u_fit] = compute_ustar(Nz_SLayer,z_d,dist[loc[0],loc[1],:],data.data[loc[0],loc[1],:,0],\
-                                                                    data.data[loc[0],loc[1],:,1],True)
+                                                                    data.data[loc[0],loc[1],:,1],ben_topography_fit_levels[cases[case]],True)
             
             phi_m_2D[k,:] = phi_m_loc(nx,ny,Nz_SLayer,z_d,data.data[loc[0],loc[1],z_start:z_start+Nz_SLayer,0],data.data[loc[0],loc[1],z_start:z_start+Nz_SLayer,1],\
                                       data.data[loc[0],loc[1],z_start:z_start+Nz_SLayer,12],data.data[loc[0],loc[1],z_start:z_start+Nz_SLayer,15],ustar[k])
@@ -524,7 +528,7 @@ for case in range(len(cases)):
             z_d = (z - ((d_dim_f[k])/zi))
             
             [z0hi[k],ustar[k],U_mean,U_data,z_data,u_fit] = compute_ustar(Nz_SLayer,z_d,dist[loc[0],loc[1],:],data.data[loc[0],loc[1],:,0],\
-                                                                data.data[loc[0],loc[1],:,1],True)
+                                                                data.data[loc[0],loc[1],:,1],ben_topography_fit_levels[cases[case]],True)
             
             phi_m_2D[k,:] = phi_m_loc(nx,ny,Nz_SLayer,z_d,data.data[loc[0],loc[1],z_start:z_start+Nz_SLayer,0],data.data[loc[0],loc[1],z_start:z_start+Nz_SLayer,1],\
                                   data.data[loc[0],loc[1],z_start:z_start+Nz_SLayer,12],data.data[loc[0],loc[1],z_start:z_start+Nz_SLayer,15],ustar[k])
@@ -571,7 +575,7 @@ for case in range(len(cases)):
             U_mean = U[:Nz_SLayer]
 
             # Levels to use for logarithmic fit
-            fit_levels = [70, 80, 90]#, 110]
+            fit_levels = [100, 110, 120]#, 110]
 
             z_data = z_d[fit_levels]
             U_data = U_mean[fit_levels]
@@ -655,7 +659,7 @@ for case in range(len(cases)):
 
 #%%Plot the profiles 
 
-def crossing_points_yb(a, z, ref=0.38):
+def crossing_points_yb(a, z, ref=0.37):
     """Return list of z positions where a crosses ref."""
     pts = []
     for i in range(len(a)-1):
@@ -706,7 +710,7 @@ def first_sustained_below(a, z, threshold=0.1):
     return None
 
 cases = ['Flat','Sinusoidal','ATTO','Gap_8_9mps','Patch_8_9mps','simulation_G']
-col = 'coral'
+col = 'grey'
 col2 = 'tomato'
 from matplotlib.transforms import ScaledTranslation
 # fig,axs = plt.subplots(1,6,tight_layout=True,sharey=True,figsize=(12,4))
@@ -779,7 +783,7 @@ for case in range(len(cases)):
         #     if zc>1:
         #         ax2.scatter(0.38, zc, s=40, marker='o',facecolors='none', edgecolors='red',linewidths=1.5, zorder=5) 
             
-        ax2.axvline(0.38,c=col2,ls=':')
+        ax2.axvline(0.37,c=col2,ls=':')
         ax2.axvspan(0.35,0.39,alpha=0.5,color=col)
         ax2.axvspan(0.32,0.42,alpha=0.3,color=col)
         # ax2.set_xlabel(r"$y_B$",c=col,fontsize=16,labelpad=7)
@@ -838,7 +842,7 @@ for case in range(len(cases)):
         #     if zc>2:
         #         ax2.scatter(0.38, zc, s=40, marker='o',facecolors='none', edgecolors='red',linewidths=1.5, zorder=5) 
                 
-        ax2.axvline(0.38,c=col2,ls=':')
+        ax2.axvline(0.37,c=col2,ls=':')
         ax2.axvspan(0.35,0.39,alpha=0.5,color=col)
         ax2.axvspan(0.32,0.42,alpha=0.3,color=col)
         ax2.set_xlabel(r"$y_B$",c=col2,fontsize=16,labelpad=7)
@@ -879,7 +883,7 @@ for case in range(len(cases)):
         #     if zc>2:
         #         ax2.scatter(0.38, zc, color='red', s=30, zorder=5)
 
-        ax2.axvline(0.38,c=col2,ls=':')
+        ax2.axvline(0.37,c=col2,ls=':')
         ax2.axvspan(0.35,0.39,alpha=0.5,color=col)
         ax2.axvspan(0.32,0.42,alpha=0.3,color=col)
         ax2.set_xlabel(r"$y_B$",c=col2,fontsize=16,labelpad=7)
@@ -935,7 +939,7 @@ for case in range(len(cases)):
         #     if zc>3 and zc<8 and tmp:
         #         ax2.scatter(0.38, zc, s=40, marker='o',facecolors='none', edgecolors='red',linewidths=1.5, zorder=5) 
         #         tmp = False
-        ax2.axvline(0.38,c=col2,ls=':')
+        ax2.axvline(0.37,c=col2,ls=':')
         ax2.axvspan(0.35,0.39,alpha=0.5,color=col)
         ax2.axvspan(0.32,0.42,alpha=0.3,color=col)
         # ax2.set_xlabel(r"$y_B$",c=col,fontsize=16,labelpad=7)
@@ -959,12 +963,11 @@ axs[4].set_xlabel(r"$\phi_M$",fontsize=16)
 axs[5].set_xlabel(r"$\phi_M$",fontsize=16)
 axs[0].set_ylabel(r"$z/h_C$",fontsize=16)
 axs[3].set_ylabel(r"$z/h_C$",fontsize=16)
-# plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'RSL_height_comparison.png',dpi=300,edgecolor='white',facecolor='white')
+plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'RSL_height_comparison_ustar.png',dpi=300,edgecolor='white',facecolor='white')
 
 plt.show() 
 
 #%%
-
 
 
 

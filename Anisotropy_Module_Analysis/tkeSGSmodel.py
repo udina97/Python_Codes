@@ -5,7 +5,7 @@ Created on Tue Jul 21 10:32:04 2026
 
 @author: u1450851
 """
-
+#%%
 import os
 import numpy as np
 import pandas as pd
@@ -48,7 +48,7 @@ z_w = np.arange(0,nz)*dz
 #%%Load surface checkpoint/istantaneous fields 
 # sim = 'yb_test_v2'
 
-sim = 'test_planavg'
+sim = 'test_nosgs'
 
 path = '/scratch/general/nfs1/u1450851/LES_Sims/'
 

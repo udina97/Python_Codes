@@ -5,7 +5,7 @@ Created on Thu Oct 30 11:06:42 2025
 
 @author: u1450851
 """
-
+#%%
 
 #Libraries and Functions
 import numpy as np
@@ -27,15 +27,24 @@ from functions import get_dphidx,get_dphidy,get_dphidz,uvpnode2wnode,wnode2uvpno
 def log_fit(z, a, b):
     return a * np.log(b * z)
 
-def compute_ustar_G(Nz_SLayer, z_d, u, v, twr=False):    
+GIULIA_FIT_LEVELS = [80, 90, 100]
+BEN_FIT_LEVELS = {
+    'ATTO': [160, 170, 180],
+    'Sinusoidal': [160, 170, 180],
+    'Flat': [100, 110, 120],
+}
+URBAN_FIT_LEVELS = [100, 110, 120]
+
+def compute_ustar_G(Nz_SLayer, z_d, u, v, twr=False, fit_levels=None):    
 
     # Compute velocity magnitude and restrict to surface layer
     U = np.sqrt(u**2 + v**2)
     U_mean = U[:Nz_SLayer]
     kappa = 0.4
 
-    # Levels to use for logarithmic fit
-    fit_levels = [50, 60, 70, 90]
+    if fit_levels is None:
+        fit_levels = GIULIA_FIT_LEVELS
+    fit_levels = np.asarray(fit_levels, dtype=int)
 
     z_data = z_d[fit_levels]
     U_data = U_mean[fit_levels]
@@ -93,7 +102,7 @@ def compute_d_twr_G(data, coord, height, dz, zi, u_scale, LAD):
 
     return d_dim
 
-def compute_ustar(Nz_SLayer, z_d, dist, u, v, twr=False):    
+def compute_ustar(Nz_SLayer, z_d, dist, u, v, twr=False, fit_levels=None):    
     kappa = 0.4
     z_start = np.argmax(dist > 0) - 5
 
@@ -101,8 +110,9 @@ def compute_ustar(Nz_SLayer, z_d, dist, u, v, twr=False):
     U = np.sqrt(u**2 + v**2)
     U_mean = U[z_start:z_start+Nz_SLayer]
 
-    # Levels to use for logarithmic fit
-    fit_levels = [100, 110, 120, 130]
+    if fit_levels is None:
+        fit_levels = BEN_FIT_LEVELS['ATTO']
+    fit_levels = np.asarray(fit_levels, dtype=int)
 
     z_data = z_d[fit_levels]
     U_data = U_mean[fit_levels]
@@ -133,7 +143,7 @@ cases = ['Gap_12_9mps','Gap_8_9mps','Gap_4_9mps','Patch_12_9mps','Patch_8_9mps',
 
 for i in range(len(cases)):
     #load the data
-    path_to_data = '/uufs/chpc.utah.edu/common/home/calaf-group2/GiuliaData/TKE_BUDGET_AND_RAV/'
+    path_to_data = '/uufs/chpc.utah.edu/common/home/calaf-group2/Ben_research/GiuliaData/TKE_BUDGET_AND_RAV/'
     data = xr.open_dataarray(path_to_data + cases[i] + '/Data_Momentum_4TKE.nc')
     
     #Simulation parameters
@@ -260,7 +270,7 @@ for i in range(len(cases)):
             z_d = (z - ((dispH[cases[i]][k])/zi))
             
             [z0[cases[i]][k],ustar[cases[i]][k],U_mean,U_data,z_data,u_fit] = compute_ustar(Nz_SLayer,z_d,dist[loc[0],loc[1],:],data.data[loc[0],loc[1],:,0],\
-                                                                    data.data[loc[0],loc[1],:,1],True)
+                                                                    data.data[loc[0],loc[1],:,1],True,fit_levels=BEN_FIT_LEVELS[cases[i]])
             UoverU[cases[i]][k] = U_mean[16]/ustar[cases[i]][k]
         
     else:
@@ -300,7 +310,7 @@ for i in range(len(cases)):
             z_d = (z - ((dispH[cases[i]+'_p'][k])/zi))
             
             [z0[cases[i]+'_p'][k],ustar[cases[i]+'_p'][k],U_mean,U_data,z_data,u_fit] = compute_ustar(Nz_SLayer,z_d,dist[loc[0],loc[1],:],data.data[loc[0],loc[1],:,0],\
-                                                                    data.data[loc[0],loc[1],:,1],True)
+                                                                    data.data[loc[0],loc[1],:,1],True,fit_levels=BEN_FIT_LEVELS[cases[i]])
             UoverU[cases[i]+'_p'][k] = U_mean[16]/ustar[cases[i]+'_p'][k]
         
         for k, (ix, iy) in enumerate(coord_v):
@@ -311,7 +321,7 @@ for i in range(len(cases)):
             z_d = (z - ((dispH[cases[i]+'_v'][k])/zi))
             
             [z0[cases[i]+'_v'][k],ustar[cases[i]+'_v'][k],U_mean,U_data,z_data,u_fit] = compute_ustar(Nz_SLayer,z_d,dist[loc[0],loc[1],:],data.data[loc[0],loc[1],:,0],\
-                                                                    data.data[loc[0],loc[1],:,1],True)
+                                                                    data.data[loc[0],loc[1],:,1],True,fit_levels=BEN_FIT_LEVELS[cases[i]])
             UoverU[cases[i]+'_v'][k] = U_mean[16]/ustar[cases[i]+'_v'][k]
             
     print('Done with case: '+cases[i])
@@ -335,14 +345,15 @@ kappa = 0.4
 def log_fit(z, a, b):
     return a * np.log(b * z)
 
-def compute_ustar(Nz_SLayer, z_d, u, v, twr=False):    
+def compute_ustar(Nz_SLayer, z_d, u, v, twr=False, fit_levels=None):    
     from scipy.optimize import curve_fit
     # Compute velocity magnitude and restrict to surface layer
     U = np.sqrt(u**2 + v**2)
     U_mean = U[:Nz_SLayer]
 
-    # Levels to use for logarithmic fit
-    fit_levels = [70, 80, 90]#, 110]
+    if fit_levels is None:
+        fit_levels = URBAN_FIT_LEVELS
+    fit_levels = np.asarray(fit_levels, dtype=int)
 
     z_data = z_d[fit_levels]
     U_data = U_mean[fit_levels]
@@ -504,4 +515,4 @@ for i in range(len(cases)):
 
 
 
-
+# %%

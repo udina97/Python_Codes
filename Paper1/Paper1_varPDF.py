@@ -5,7 +5,7 @@ Created on Mon Jun 15 11:57:21 2026
 
 @author: u1450851
 """
-
+#%%
 
 #Libraries and Functions
 import numpy as np
@@ -86,7 +86,7 @@ for i in range(len(cases)):
     tmpRES = copy.deepcopy((TKE[cases[i]][:,:,:,14] - TKE[cases[i]][:,:,:,11]))
     tmpDIS = copy.deepcopy((TKE[cases[i]][:,:,:,11]))
     val = np.nanmedian(tmpRES[(dist[cases[i]][:,:,:,0]>38) & (dist[cases[i]][:,:,:,0]<44)])
-    tmpRES[abs(tmpRES) < 0.05*val] = 0
+    tmpRES[abs(tmpRES) < 0.01*val] = 0
     
     # tmpDIS = copy.deepcopy(TKE[cases[i]][:, :, :, 11])
     # tmpRES = copy.deepcopy(TKE[cases[i]][:, :, :, -1] + TKE[cases[i]][:, :, :, 11])
@@ -150,6 +150,8 @@ from matplotlib.transforms import ScaledTranslation
 
 # colors = ['#0072B2','#E69F00','#CC79A7']
 colors = ['#41049D','#CC4778','#FCA636']
+ls = ['-','--','-.']
+tols = [10,5,15]
 layout = [['a)', 'b)', 'c)'],
           ['d)', 'e)', 'f)']]
 
@@ -175,91 +177,91 @@ for i in range(len(cases)):
     # vv_filt = vv_e[(anisotropy[cases[i]][:,:,:,1]<1) & (anisotropy[cases[i]][:,:,:,1]>0) & (dist[cases[i]][:,:,:,0]>40) & (dist[cases[i]][:,:,:,0]<40*15)]
     # ww_filt = ww_e[(anisotropy[cases[i]][:,:,:,1]<1) & (anisotropy[cases[i]][:,:,:,1]>0) & (dist[cases[i]][:,:,:,0]>40) & (dist[cases[i]][:,:,:,0]<40*15)]
     # uw_filt = uw_e[(anisotropy[cases[i]][:,:,:,1]<1) & (anisotropy[cases[i]][:,:,:,1]>0) & (dist[cases[i]][:,:,:,0]>40) & (dist[cases[i]][:,:,:,0]<40*15)]
-    
-    uu_filt = uu_e[(abs(ResNorm[cases[i]])<5) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*5)]
-    vv_filt = vv_e[(abs(ResNorm[cases[i]])<5) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*5)]
-    ww_filt = ww_e[(abs(ResNorm[cases[i]])<5) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*5)]
-    uw_filt = uw_e[(abs(ResNorm[cases[i]])<5) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*5)]
-    
-    # uu_filt = uu_e[:,:,10:][(abs(ResNorm[cases[i]])[:,:,10:]<10)]
-    # vv_filt = vv_e[:,:,10:][(abs(ResNorm[cases[i]])[:,:,10:]<10)]
-    # ww_filt = ww_e[:,:,10:][(abs(ResNorm[cases[i]])[:,:,10:]<10)]
-    # uw_filt = uw_e[:,:,10:][(abs(ResNorm[cases[i]])[:,:,10:]<10)]
-    
-    nsamples = 200000
-    
-    uu_samp = np.random.choice(uu_filt,size=nsamples,replace=False)
-    vv_samp = np.random.choice(vv_filt,size=nsamples,replace=False)
-    ww_samp = np.random.choice(ww_filt,size=nsamples,replace=False)
-    uw_samp = np.random.choice(uw_filt,size=nsamples,replace=False)
-    
-    cR = 1/(1 - (3/2)*ww_samp) # for vv and ww
-    yB = (np.sqrt(3)/2)*(1-1/cR) # for vv and ww
+    for j in range(len(tols)):
+        uu_filt = uu_e[(abs(ResNorm[cases[i]])<tols[j]) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*15)]
+        vv_filt = vv_e[(abs(ResNorm[cases[i]])<tols[j]) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*15)]
+        ww_filt = ww_e[(abs(ResNorm[cases[i]])<tols[j]) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*15)]
+        uw_filt = uw_e[(abs(ResNorm[cases[i]])<tols[j]) & (dist[cases[i]][:,:,:,0]>1*40) & (dist[cases[i]][:,:,:,0]<40*15)]
+        
+        # uu_filt = uu_e[:,:,10:][(abs(ResNorm[cases[i]])[:,:,10:]<10)]
+        # vv_filt = vv_e[:,:,10:][(abs(ResNorm[cases[i]])[:,:,10:]<10)]
+        # ww_filt = ww_e[:,:,10:][(abs(ResNorm[cases[i]])[:,:,10:]<10)]
+        # uw_filt = uw_e[:,:,10:][(abs(ResNorm[cases[i]])[:,:,10:]<10)]
+        
+        nsamples = 200000
+        
+        uu_samp = np.random.choice(uu_filt,size=nsamples,replace=False)
+        vv_samp = np.random.choice(vv_filt,size=nsamples,replace=False)
+        ww_samp = np.random.choice(ww_filt,size=nsamples,replace=False)
+        uw_samp = np.random.choice(uw_filt,size=nsamples,replace=False)
+        
+        cR = 1/(1 - (3/2)*ww_samp) # for vv and ww
+        yB = (np.sqrt(3)/2)*(1-1/cR) # for vv and ww
 
-    kde = gaussian_kde(uu_samp)
-    x_pdf = np.linspace(min(uu_samp),max(uu_samp),1000)
-    pdf = kde(x_pdf)
-    axs[0,0].plot(x_pdf,pdf,c=colors[i])
-    mean_val = np.mean(uu_samp)
-    median_val = np.median(uu_samp)
-    y_mean = np.interp(mean_val, x_pdf, pdf)
-    y_median = np.interp(median_val, x_pdf, pdf)
-    axs[0,0].plot([median_val, median_val], [0, y_median], c=colors[i], ls='-')
-    print(f"Median uu/e for {cases[i]} is: {median_val}")
-    
-    kde = gaussian_kde(vv_samp)
-    x_pdf = np.linspace(min(vv_samp),max(vv_samp),1000)
-    pdf = kde(x_pdf)
-    axs[0,1].plot(x_pdf,pdf,c=colors[i])
-    mean_val = np.mean(vv_samp)
-    median_val = np.median(vv_samp)
-    y_mean = np.interp(mean_val, x_pdf, pdf)
-    y_median = np.interp(median_val, x_pdf, pdf)
-    axs[0,1].plot([median_val, median_val], [0, y_median], c=colors[i], ls='-')
-    print(f"Median vv/e for {cases[i]} is: {median_val}")
-    
-    kde = gaussian_kde(ww_samp)
-    x_pdf = np.linspace(min(ww_samp),max(ww_samp),1000)
-    pdf = kde(x_pdf)
-    axs[0,2].plot(x_pdf,pdf,colors[i])
-    mean_val = np.mean(ww_samp)
-    median_val = np.median(ww_samp)
-    y_mean = np.interp(mean_val, x_pdf, pdf)
-    y_median = np.interp(median_val, x_pdf, pdf)
-    axs[0,2].plot([median_val, median_val], [0, y_median], c=colors[i], ls='-')
-    print(f"Median ww/e for {cases[i]} is: {median_val}")
-    
-    kde = gaussian_kde(uw_samp)
-    x_pdf = np.linspace(min(uw_samp),max(uw_samp),1000)
-    pdf = kde(x_pdf)
-    axs[1,0].plot(x_pdf,pdf,colors[i])
-    mean_val = np.mean(uw_samp)
-    median_val = np.median(uw_samp)
-    y_mean = np.interp(mean_val, x_pdf, pdf)
-    y_median = np.interp(median_val, x_pdf, pdf)
-    axs[1,0].plot([median_val, median_val], [0, y_median], c=colors[i], ls='-')
-    
-    kde = gaussian_kde(cR)
-    x_pdf = np.linspace(min(cR),max(cR),1000)
-    pdf = kde(x_pdf)
-    axs[1,1].plot(x_pdf,pdf,c=colors[i])
-    mean_val = np.mean(cR)
-    median_val = np.median(cR)
-    y_mean = np.interp(mean_val, x_pdf, pdf)
-    y_median = np.interp(median_val, x_pdf, pdf)
-    axs[1,1].plot([median_val, median_val], [0, y_median], c=colors[i], ls='-')
-    print(f"Median cR for {cases[i]} is: {median_val}")
-    
-    kde = gaussian_kde(yB)
-    x_pdf = np.linspace(min(yB),max(yB),1000)
-    pdf = kde(x_pdf)
-    axs[1,2].plot(x_pdf,pdf,c=colors[i])
-    mean_val = np.mean(yB)
-    median_val = np.median(yB)
-    y_mean = np.interp(mean_val, x_pdf, pdf)
-    y_median = np.interp(median_val, x_pdf, pdf)
-    axs[1,2].plot([median_val, median_val], [0, y_median], c=colors[i], ls='-')
-    print(f"Median yB for {cases[i]} is: {median_val}")
+        kde = gaussian_kde(uu_samp)
+        x_pdf = np.linspace(min(uu_samp),max(uu_samp),1000)
+        pdf = kde(x_pdf)
+        axs[0,0].plot(x_pdf,pdf,c=colors[i],linestyle=ls[j])
+        mean_val = np.mean(uu_samp)
+        median_val = np.median(uu_samp)
+        y_mean = np.interp(mean_val, x_pdf, pdf)
+        y_median = np.interp(median_val, x_pdf, pdf)
+        axs[0,0].plot([median_val, median_val], [0, y_median], c=colors[i], ls='-')
+        print(f"Median uu/e for {cases[i]} is: {median_val}")
+        
+        kde = gaussian_kde(vv_samp)
+        x_pdf = np.linspace(min(vv_samp),max(vv_samp),1000)
+        pdf = kde(x_pdf)
+        axs[0,1].plot(x_pdf,pdf,c=colors[i],linestyle=ls[j])
+        mean_val = np.mean(vv_samp)
+        median_val = np.median(vv_samp)
+        y_mean = np.interp(mean_val, x_pdf, pdf)
+        y_median = np.interp(median_val, x_pdf, pdf)
+        axs[0,1].plot([median_val, median_val], [0, y_median], c=colors[i], ls='-')
+        print(f"Median vv/e for {cases[i]} is: {median_val}")
+        
+        kde = gaussian_kde(ww_samp)
+        x_pdf = np.linspace(min(ww_samp),max(ww_samp),1000)
+        pdf = kde(x_pdf)
+        axs[0,2].plot(x_pdf,pdf,c=colors[i],linestyle=ls[j])
+        mean_val = np.mean(ww_samp)
+        median_val = np.median(ww_samp)
+        y_mean = np.interp(mean_val, x_pdf, pdf)
+        y_median = np.interp(median_val, x_pdf, pdf)
+        axs[0,2].plot([median_val, median_val], [0, y_median], c=colors[i], ls='-')
+        print(f"Median ww/e for {cases[i]} is: {median_val}")
+        
+        kde = gaussian_kde(uw_samp)
+        x_pdf = np.linspace(min(uw_samp),max(uw_samp),1000)
+        pdf = kde(x_pdf)
+        axs[1,0].plot(x_pdf,pdf,c=colors[i],linestyle=ls[j])
+        mean_val = np.mean(uw_samp)
+        median_val = np.median(uw_samp)
+        y_mean = np.interp(mean_val, x_pdf, pdf)
+        y_median = np.interp(median_val, x_pdf, pdf)
+        axs[1,0].plot([median_val, median_val], [0, y_median], c=colors[i], ls='-')
+        
+        kde = gaussian_kde(cR)
+        x_pdf = np.linspace(min(cR),max(cR),1000)
+        pdf = kde(x_pdf)
+        axs[1,1].plot(x_pdf,pdf,c=colors[i],linestyle=ls[j])
+        mean_val = np.mean(cR)
+        median_val = np.median(cR)
+        y_mean = np.interp(mean_val, x_pdf, pdf)
+        y_median = np.interp(median_val, x_pdf, pdf)
+        axs[1,1].plot([median_val, median_val], [0, y_median], c=colors[i], ls='-')
+        print(f"Median cR for {cases[i]} is: {median_val}")
+        
+        kde = gaussian_kde(yB)
+        x_pdf = np.linspace(min(yB),max(yB),1000)
+        pdf = kde(x_pdf)
+        axs[1,2].plot(x_pdf,pdf,c=colors[i],linestyle=ls[j])
+        mean_val = np.mean(yB)
+        median_val = np.median(yB)
+        y_mean = np.interp(mean_val, x_pdf, pdf)
+        y_median = np.interp(median_val, x_pdf, pdf)
+        axs[1,2].plot([median_val, median_val], [0, y_median], c=colors[i], ls='-')
+        print(f"Median yB for {cases[i]} is: {median_val}")
     
 # cr = [1.8]
 # cr_ls = ['-.']

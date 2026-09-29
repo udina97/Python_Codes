@@ -25,9 +25,9 @@ from loadData import load_momentum
 
 #%%Simulation parameters
 
-nx = 32
-ny = 32
-nz = 32
+nx = 256
+ny = 256
+nz = 256
 
 lx = 2*np.pi
 ly = 2*np.pi
@@ -48,14 +48,18 @@ z_w = np.arange(0,nz)*dz
 #%%Load surface checkpoint/istantaneous fields 
 # sim = 'yb_test_v2'
 
-sim = 'test_nosgs'
+sim = 'test_tkesgs_tii_256'
 
 path = '/scratch/general/nfs1/u1450851/LES_Sims/'
 
-step = 50000   
+step = 110000
+avgtime = 15   
 
-checkpnt = read_checkpoint_mom(path+sim+'/output_checkpoint/',[step],nx,ny,nz)
+# checkpnt = read_checkpoint_mom(path+sim+'/output_checkpoint/',[step],nx,ny,nz)
+checkpnt_aniso = read_checkpoint_aniso(path+sim+'/output_checkpoint/',[step],nx,ny,nz)
 # checkpnt_sfc = read_checkpoint_sfc_L(path+sim+'/output_checkpoint/',[step],nx,ny)
+RAV_aniso = xr.open_dataarray(path+sim+'/data/Anisotropy/Data_Anisotropy_'+str(step)+'.nc').data
+RAV_mom = xr.open_dataarray(path+sim+'/data/Momentum3D/Data_Momentum_'+str(avgtime)+'min.nc').data
 
 # NumVariables = 27
 # NumIt = 1
@@ -80,18 +84,24 @@ checkpnt = read_checkpoint_mom(path+sim+'/output_checkpoint/',[step],nx,ny,nz)
 
 #%%Plot anisotropy invariant
 
-fig,axs = plt.subplots(1,1,tight_layout=True)
+fig,axs = plt.subplots(1,2,tight_layout=True)
 
-axs.pcolormesh(x,z_uvp,np.median(checkpnt['yB'],axis=(1)).T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
-# axs.pcolormesh(x,z_uvp,checkpnt['yB'][:,ny//2,:].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
-# axs.pcolormesh(x,z_w,checkpnt['yB'][nx//2,:,:].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
-# axs.pcolormesh(x,y,checkpnt['yB'][:,:,15].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+axs[0].pcolormesh(x,z_uvp,np.median(checkpnt_aniso['yB'],axis=(1)).T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+# axs[0].pcolormesh(x,z_uvp,checkpnt_aniso['yB'][:,ny//2,:].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+# axs[0].pcolormesh(x,z_w,checkpnt_aniso['yB'][nx//2,:,:].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+# axs[0].pcolormesh(x,y,checkpnt_aniso['yB'][:,:,15].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+axs[1].pcolormesh(x,z_uvp,np.median(RAV_aniso[:,:,:,1],axis=(1)).T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
 
 plt.show()
 
+#%%Velocity magnitude at the top
+
+U_mag = np.mean(np.sqrt(RAV_mom[:,:,:,0]**2 + RAV_mom[:,:,:,1]**2)[:,:,-1])*uscale
+print('Velocity magnitude at the top: ',U_mag)
+
 #%%Plot subgrid scale tke
 
-k_sgs = checkpnt["k_sgs"][:,:,:nz]
+k_sgs = checkpnt_aniso["tke_sgs"][:,:,:nz]
 
 fig,axs = plt.subplots(1,1,tight_layout=True)
 
@@ -100,144 +110,436 @@ axs.pcolormesh(x,z_w,np.median(k_sgs,axis=(1)).T,cmap=cmap)
 # axs.pcolormesh(x,y,k_sgs[:,:,5].T,cmap=cmap)
 
 plt.show()
+#%%
 
 #%%PLot velocity components
 
-fig,axs = plt.subplots(1,3,tight_layout=True,figsize = (10,3))
+fig,axs = plt.subplots(2,3,tight_layout=True,figsize = (10,3))
 
-axs[0].pcolormesh(x,z_uvp,checkpnt['u'][:,ny//2,:nz].T,cmap='viridis')
-axs[1].pcolormesh(x,z_uvp,checkpnt['v'][:,ny//2,:nz].T,cmap='viridis')
-axs[2].pcolormesh(x,z_w,checkpnt['w'][:,ny//2,:nz].T,cmap='viridis')
+axs[0,0].pcolormesh(x,z_uvp,checkpnt_aniso['u_new'][:,ny//2,:nz].T,cmap='viridis')
+axs[0,1].pcolormesh(x,z_uvp,checkpnt_aniso['v_new'][:,ny//2,:nz].T,cmap='viridis')
+axs[0,2].pcolormesh(x,z_uvp,checkpnt_aniso['w_new'][:,ny//2,:nz].T,cmap='viridis')
 
-# axs[0].pcolormesh(y,z_uvp,checkpnt['u'][nx//2,:,:nz].T,cmap='viridis')
-# axs[1].pcolormesh(y,z_uvp,checkpnt['v'][nx//2,:,:nz].T,cmap='viridis')
-# axs[2].pcolormesh(y,z_w,checkpnt['w'][nx//2,:,:nz].T,cmap='viridis')
+axs[1,0].pcolormesh(x,z_uvp,RAV_mom[:,:,:,0][:,ny//2,:].T,cmap='viridis')
+axs[1,1].pcolormesh(x,z_uvp,RAV_mom[:,:,:,1][:,ny//2,:].T,cmap='viridis')
+axs[1,2].pcolormesh(x,z_w,RAV_mom[:,:,:,2][:,ny//2,:].T,cmap='viridis')
 
-# axs[0].pcolormesh(x,y,checkpnt['u'][:,:,5].T,cmap='viridis')
-# axs[1].pcolormesh(x,y,checkpnt['v'][:,:,5].T,cmap='viridis')
-# axs[2].pcolormesh(x,y,checkpnt['w'][:,:,5].T,cmap='viridis')
+# axs[0].pcolormesh(y,z_uvp,checkpnt_aniso['u_new'][nx//2,:,:nz].T,cmap='viridis')
+# axs[1].pcolormesh(y,z_uvp,checkpnt_aniso['v_new'][nx//2,:,:nz].T,cmap='viridis')
+# axs[2].pcolormesh(y,z_w,checkpnt_aniso['w_new'][nx//2,:,:nz].T,cmap='viridis')
 
-axs[0].set_title('u')
-axs[1].set_title('v')
-axs[2].set_title('w')
+# axs[0].pcolormesh(x,y,checkpnt_aniso['u_new'][:,:,15].T,cmap='viridis')
+# axs[1].pcolormesh(x,y,checkpnt_aniso['v_new'][:,:,15].T,cmap='viridis')
+# axs[2].pcolormesh(x,y,checkpnt_aniso['w_new'][:,:,15].T,cmap='viridis')
 
-plt.show()
-
-#%%
-
-L_neg = checkpnt['L'][(checkpnt['L']<0)]
-L_pos = checkpnt['L'][(checkpnt['L']>0)]
-
-print(len(L_neg))
-print(len(L_pos))
-
-fig,axs = plt.subplots(1,2,tight_layout=True)
-kde = gaussian_kde((L_neg).flatten())
-x_pdf = np.linspace(min(L_neg.flatten()), max(L_neg.flatten()), 1000)
-pdf = kde(x_pdf)
-axs[0].hist(L_neg.flatten(), bins=100, density=True, alpha=0.4, label="Histogram")
-axs[0].plot(x_pdf, pdf, 'r-', label="KDE PDF")
-
-kde = gaussian_kde((L_pos).flatten())
-x_pdf = np.linspace(min(L_pos.flatten()), max(L_pos.flatten()), 1000)
-pdf = kde(x_pdf)
-axs[1].hist(L_pos.flatten(), bins=100, density=True, alpha=0.4, label="Histogram")
-axs[1].plot(x_pdf, pdf, 'r-', label="KDE PDF")
-
-axs[0].set_xlim(-1,0)
-axs[1].set_xlim(0,1)
+axs[0,0].set_title('u')
+axs[0,1].set_title('v')
+axs[0,2].set_title('w')
 
 plt.show()
 
-#%%
+#%%Compute REynolds stresses and TKE, resolved and SGS
 
-txx = data[:,:,:,16].data
-tyy = data[:,:,:,17].data
-tzz = data[:,:,:,18].data
-txy = data[:,:,:,19].data
-txz = data[:,:,:,20].data
-tyz = data[:,:,:,21].data
+Rxx_res = checkpnt_aniso['uu_new'][:,:,:nz] - checkpnt_aniso['u_new'][:,:,:nz]*checkpnt_aniso['u_new'][:,:,:nz]
+Rxx_sgs = - checkpnt_aniso['txx_new'][:,:,:nz] + (2/3)*checkpnt_aniso['tke_sgs_new'][:,:,:nz]
+Rxx_tot = Rxx_res + Rxx_sgs
+Rxx_rav_res = RAV_mom[:,:,:,4] - RAV_mom[:,:,:,0]*RAV_mom[:,:,:,0]
+Rxx_rav_sgs = - RAV_mom[:,:,:,16] + (2/3)*wnode2uvpnode(RAV_mom[:,:,:,-1])
+Rxx_rav_tot = Rxx_rav_res + Rxx_rav_sgs
 
-#%%Compute Reynolds stresses using the on-the-fly averages
+Ryy_res = checkpnt_aniso['vv_new'][:,:,:nz] - checkpnt_aniso['v_new'][:,:,:nz]*checkpnt_aniso['v_new'][:,:,:nz]
+Ryy_sgs = - checkpnt_aniso['tyy_new'][:,:,:nz] + (2/3)*checkpnt_aniso['tke_sgs_new'][:,:,:nz]
+Ryy_tot = Ryy_res + Ryy_sgs
+Ryy_rav_res = RAV_mom[:,:,:,5] - RAV_mom[:,:,:,1]*RAV_mom[:,:,:,1]
+Ryy_rav_sgs = - RAV_mom[:,:,:,17] + (2/3)*wnode2uvpnode(RAV_mom[:,:,:,-1])
+Ryy_rav_tot = Ryy_rav_res + Ryy_rav_sgs
 
-uu = checkpnt['uu_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['u_new'][:,:,:nz] #+ (2/3)*checkpnt['tke_sgs']
-vv = checkpnt['vv_new'][:,:,:nz] - checkpnt['v_new'][:,:,:nz]*checkpnt['v_new'][:,:,:nz] #+ (2/3)*checkpnt['tke_sgs']
-ww = checkpnt['ww_new'][:,:,:nz] - checkpnt['w_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz] #+ (2/3)*checkpnt['tke_sgs']
-uv = checkpnt['uv_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['v_new'][:,:,:nz] #- checkpnt['txy'][:,:,:nz]
-uw = checkpnt['uw_new'][:,:,:nz] - checkpnt['u_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz] #- checkpnt['txz'][:,:,:nz]
-vw = checkpnt['vw_new'][:,:,:nz] - checkpnt['v_new'][:,:,:nz]*checkpnt['w_new'][:,:,:nz] #- checkpnt['tyz'][:,:,:nz]
+Rzz_res = checkpnt_aniso['ww_new'][:,:,:nz] - checkpnt_aniso['w_new'][:,:,:nz]*checkpnt_aniso['w_new'][:,:,:nz]
+Rzz_sgs = - checkpnt_aniso['tzz_new'][:,:,:nz] + (2/3)*checkpnt_aniso['tke_sgs_new'][:,:,:nz]
+Rzz_tot = Rzz_res + Rzz_sgs
+Rzz_rav_res = wnode2uvpnode(RAV_mom[:,:,:,6] - RAV_mom[:,:,:,2]*RAV_mom[:,:,:,2])
+Rzz_rav_sgs = - RAV_mom[:,:,:,18] + (2/3)*wnode2uvpnode(RAV_mom[:,:,:,-1])
+Rzz_rav_tot = Rzz_rav_res + Rzz_rav_sgs
 
-txx = checkpnt['txx'][:,:,:nz]
-tyy = checkpnt['tyy'][:,:,:nz]
-tzz = checkpnt['tzz'][:,:,:nz]
-txy = checkpnt['txy'][:,:,:nz]
-txz = checkpnt['txz'][:,:,:nz]
-tyz = checkpnt['tyz'][:,:,:nz]
+Rxy_res = checkpnt_aniso['uv_new'][:,:,:nz] - checkpnt_aniso['u_new'][:,:,:nz]*checkpnt_aniso['v_new'][:,:,:nz]
+Rxy_sgs = - checkpnt_aniso['txy_new'][:,:,:nz]
+Rxy_tot = Rxy_res + Rxy_sgs
+Rxy_rav_res = RAV_mom[:,:,:,13] - RAV_mom[:,:,:,1]*RAV_mom[:,:,:,0]
+Rxy_rav_sgs = - RAV_mom[:,:,:,19]
+Rxy_rav_tot = Rxy_rav_res + Rxy_rav_sgs
 
-tke_res = 0.5*(uu + vv + ww)
-tke_sgs = checkpnt['tke_sgs']
-tke_tot = tke_res + tke_sgs
+Rxz_res = checkpnt_aniso['uw_new'][:,:,:nz] - checkpnt_aniso['u_new'][:,:,:nz]*checkpnt_aniso['w_new'][:,:,:nz]
+Rxz_sgs = - checkpnt_aniso['txz_new'][:,:,:nz]
+Rxz_tot = Rxz_res + Rxz_sgs
+Rxz_rav_res = wnode2uvpnode(RAV_mom[:,:,:,14] - RAV_mom[:,:,:,2]*uvpnode2wnode(RAV_mom[:,:,:,0]))
+Rxz_rav_sgs = - wnode2uvpnode(RAV_mom[:,:,:,20])
+Rxz_rav_tot = Rxz_rav_res + Rxz_rav_sgs
 
-[xB,yB,lamba3] = Anisotropy(nx,ny,nz,uu + (2/3)*tke_sgs,vv + (2/3)*tke_sgs,ww + (2/3)*tke_sgs,uv + txy,uw + txz,vw + tyz)
+Ryz_res = checkpnt_aniso['vw_new'][:,:,:nz] - checkpnt_aniso['v_new'][:,:,:nz]*checkpnt_aniso['w_new'][:,:,:nz]
+Ryz_sgs = - checkpnt_aniso['tyz_new'][:,:,:nz]
+Ryz_tot = Ryz_res + Ryz_sgs
+Ryz_rav_res = wnode2uvpnode(RAV_mom[:,:,:,15] - RAV_mom[:,:,:,2]*uvpnode2wnode(RAV_mom[:,:,:,1]))
+Ryz_rav_sgs = - wnode2uvpnode(RAV_mom[:,:,:,21])
+Ryz_rav_tot = Ryz_rav_res + Ryz_rav_sgs
 
-# b11 = uu/(2*tke)-1/3
-# b22 = vv/(2*tke)-1/3
-# b33 = ww/(2*tke)-1/3
+TKE_res = 0.5*(Rxx_res + Ryy_res + Rzz_res)#*(uscale**2)
+TKE_sgs = 0.5*(Rxx_sgs + Ryy_sgs + Rzz_sgs)#*(uscale**2)
+TKE_tot = TKE_res + TKE_sgs
+TKE_rav_res = 0.5*(Rxx_rav_res + Ryy_rav_res + Rzz_rav_res)#*(uscale**2)
+TKE_rav_sgs = 0.5*(Rxx_rav_sgs + Ryy_rav_sgs + Rzz_rav_sgs)#*(uscale**2)
+TKE_rav_tot = TKE_rav_res + TKE_rav_sgs
 
-#%%Check yB and xB are within physical interval
+TKE_res_rat = (TKE_res)/(TKE_tot)
+TKE_sgs_rat = (TKE_sgs)/(TKE_tot)
+TKE_rav_res_rat = (TKE_rav_res)/(TKE_rav_tot)*100
+TKE_rav_sgs_rat = (TKE_rav_sgs)/(TKE_rav_tot)*100
 
-if np.any(yB<0):
-    print('Negative values of yB')
-if np.any(yB>np.sqrt(3)/2):
-    print('yB exceeds max value')
-if np.any(xB<0):
-    print('Negative values of xB')
-if np.any(xB>1):
-    print('xB exceeds max value')
+#%%Plot pcolor of Reynolds terms
 
-#%%Tke SGS model terms PDFs
+fig,axs = plt.subplots(2,3,tight_layout=True)
 
-L_trace = checkpnt['trace_L_sgs'][:,:,:nz]
-denom = checkpnt['denom_tke_sgs'][:,:,:nz]
+axs[0,0].pcolormesh(x,z_uvp,Rxx_sgs[:,ny//2,:].T,cmap='bwr',vmin=0,vmax=2)
+axs[0,1].pcolormesh(x,z_uvp,Ryy_sgs[:,ny//2,:].T,cmap='bwr',vmin=0,vmax=2)
+axs[0,2].pcolormesh(x,z_uvp,Rzz_sgs[:,ny//2,:].T,cmap='bwr',vmin=0,vmax=2)
 
-fig,axs = plt.subplots(1,2,tight_layout=True)
-kde = gaussian_kde((L_trace).flatten())
-x_pdf = np.linspace(min(L_trace.flatten()), max(L_trace.flatten()), 1000)
-pdf = kde(x_pdf)
-axs[0].hist(L_trace.flatten(), bins=100, density=True, alpha=0.4, label="Histogram")
-axs[0].plot(x_pdf, pdf, 'r-', label="KDE PDF")
+axs[1,0].pcolormesh(x,z_uvp,Rxx_rav_sgs[:,ny//2,:].T,cmap='bwr',vmin=0,vmax=2)
+axs[1,1].pcolormesh(x,z_uvp,Ryy_rav_sgs[:,ny//2,:].T,cmap='bwr',vmin=0,vmax=2)
+axs[1,2].pcolormesh(x,z_uvp,Rzz_rav_sgs[:,ny//2,:].T,cmap='bwr',vmin=0,vmax=2)
 
-kde = gaussian_kde((denom).flatten())
-x_pdf = np.linspace(min(denom.flatten()), max(denom.flatten()), 1000)
-pdf = kde(x_pdf)
-axs[1].hist(denom.flatten(), bins=100, density=True, alpha=0.4, label="Histogram")
-axs[1].plot(x_pdf, pdf, 'r-', label="KDE PDF")
-
+axs[0,0].set_title('Rxx')
+axs[0,1].set_title('Ryy')
+axs[0,2].set_title('Rzz')
 
 plt.show()
+
 
 #%%
 
 fig,axs = plt.subplots(1,1,tight_layout=True)
 
-axs.pcolormesh(y,z_w,denom[nx//2,:,:].T,cmap='viridis')
+axs.pcolormesh(x,z_uvp,checkpnt_aniso['tke_sgs_new'][:,ny//2,:nz].T,cmap='viridis',vmin=0,vmax=5)
 
 plt.show()
 
-#%%
+#%%Compute anisotropy
 
-tmp = wnode2uvpnode(checkpnt['trace_L_sgs']/checkpnt['denom_tke_sgs'])[:,:,:nz]
+xB_res,yB_res,lamba3_res = Anisotropy(nx,ny,nz,Rxx_res,Ryy_res,Rzz_res,Rxy_res,Rxz_res,Ryz_res)
+xB_sgs,yB_sgs,lamba3_sgs = Anisotropy(nx,ny,nz,Rxx_sgs,Ryy_sgs,Rzz_sgs,Rxy_sgs,Rxz_sgs,Ryz_sgs)
 
-#%%
+#%%Plot yB computed using the resolved, sgs and total terms
+
+fig,axs = plt.subplots(1,3,tight_layout=True,figsize=(10,3))
+
+axs[0].pcolormesh(x,z_uvp,np.median(yB_res,axis=(1)).T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+axs[1].pcolormesh(x,z_uvp,np.median(yB_sgs,axis=(1)).T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+axs[2].pcolormesh(x,z_uvp,np.median(checkpnt_aniso['yB'],axis=(1)).T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+
+# axs[0].pcolormesh(x,z_uvp,(yB_res)[:,20,:].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+# axs[1].pcolormesh(x,z_uvp,(yB_sgs)[:,20,:].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+# axs[2].pcolormesh(x,z_uvp,(checkpnt_aniso['yB'])[:,20,:].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+
+axs[0].set_xlabel('x')
+axs[0].set_ylabel('z')
+axs[1].set_xlabel('x')
+axs[2].set_xlabel('x')
+
+axs[0].set_title(r'$y_B^{res} \quad b_{ij} = \frac{R_{ij}^{Res}}{2e^{Res}} - \frac{1}{3}\delta_{ij}$')
+axs[1].set_title(r'$y_B^{sgs} \quad b_{ij} = \frac{R_{ij}^{SGS}}{2e^{SGS}} - \frac{1}{3}\delta_{ij}$')
+axs[2].set_title(r'$y_B^{tot} \quad b_{ij} = \frac{R_{ij}^{TOT}}{2e^{TOT}} - \frac{1}{3}\delta_{ij}$')
+
+plt.show()
+
+#%%Plot the fractional contribution of TKE resolved and sgs to the total value
+
+fig,axs = plt.subplots(1,2,tight_layout=True,figsize=(10,4))
+
+p1 = axs[0].pcolormesh(x,z_uvp,np.median(TKE_res_rat,axis=(1)).T,cmap='bwr',vmin=0,vmax=1)
+p2 = axs[1].pcolormesh(x,z_uvp,np.median(TKE_sgs_rat,axis=(1)).T,cmap='bwr',vmin=0,vmax=1)
+
+# p1 = axs[0].pcolormesh(x,z_uvp,(TKE_res_rat)[:,20,:].T,cmap='bwr',vmin=0,vmax=1)
+# p2 = axs[1].pcolormesh(x,z_uvp,(TKE_sgs_rat)[:,20,:].T,cmap='bwr',vmin=0,vmax=1)
+
+axs[0].set_title(r'$f^{res} = \frac{e^{res}}{e^{res} + e^{sgs}}$')
+axs[1].set_title(r'$f^{sgs} = 1 - f^{res}$')
+
+cbar1 = fig.colorbar(p1, ax=axs[0])
+cbar2 = fig.colorbar(p2, ax=axs[1])
+
+axs[0].set_xlabel('x')
+axs[0].set_ylabel('z')
+axs[1].set_xlabel('x')
+
+plt.show()
+
+#%%Plot profiles of the fractional contribution
 
 fig,axs = plt.subplots(1,1,tight_layout=True)
 
-axs.plot(np.mean(tke_sgs,axis=(0,1)),z_uvp)
-axs.set_xlim(0,2)
+axs.plot(np.median(TKE_res_rat,axis=(0,1)),z_uvp,label='TKE_res')
+axs.axhline(dz*np.where(np.median(TKE_res_rat,axis=(0,1))>0.5)[0][0],color='k',linestyle='--')
+axs.axhline(dz*np.where(np.median(TKE_res_rat,axis=(0,1))>0.6)[0][0],color='k',linestyle='--')
+axs.axhline(dz*np.where(np.median(TKE_res_rat,axis=(0,1))>0.7)[0][0],color='k',linestyle='--')
+axs.axhline(dz*np.where(np.median(TKE_res_rat,axis=(0,1))>0.8)[0][0],color='k',linestyle='--')
+
+axs.set_ylabel('z')
+axs.set_xlabel(r'$f^{res}$')
+
+axs.set_xlim(0,1)
+axs.set_ylim(0,1)
+axs.grid()
+
 plt.show()
 
+#%%Compute yB by summing the resolved and sgs terms multiplied by the corresponding TKE ratio
 
+fig,axs = plt.subplots(1,2,tight_layout=True,figsize=(10,4))
 
+axs[0].pcolormesh(x,z_uvp,np.median(yB_res*TKE_res_rat + yB_sgs*TKE_sgs_rat,axis=(1)).T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+axs[1].pcolormesh(x,z_uvp,np.median(checkpnt_aniso['yB'],axis=(1)).T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+
+# axs[0].pcolormesh(x,z_uvp,(yB_res*TKE_res_rat + yB_sgs*TKE_sgs_rat)[:,20,:].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+# axs[1].pcolormesh(x,z_uvp,(checkpnt_aniso['yB'])[:,20,:].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+
+axs[0].set_title(r'$f^{res}y_B^{res} + f^{sgs}y_B^{sgs}$')
+axs[1].set_title(r'$y_B^{tot}$')
+
+axs[0].set_xlabel('x')
+axs[0].set_ylabel('z')
+axs[1].set_xlabel('x')
+
+plt.show()
+
+#%%Plot the TKE ratio PDFs
+
+lvl = 40
+
+TKE_res_lvl = TKE_res_rat[:,:,lvl].flatten()
+TKE_sgs_lvl = TKE_sgs_rat[:,:,lvl].flatten()
+
+TKE_res_lvl = TKE_res_lvl[np.isfinite(TKE_res_lvl)]
+TKE_sgs_lvl = TKE_sgs_lvl[np.isfinite(TKE_sgs_lvl)]
+
+x_pdf = np.linspace(min(TKE_res_lvl.min(),TKE_sgs_lvl.min()),\
+                    max(TKE_res_lvl.max(),TKE_sgs_lvl.max()),1000)
+
+kde_res = gaussian_kde(TKE_res_lvl)
+pdf_res = kde_res(x_pdf)
+
+kde_sgs = gaussian_kde(TKE_sgs_lvl)
+pdf_sgs = kde_sgs(x_pdf)
+
+fig,axs = plt.subplots(1,1,tight_layout=True)
+
+axs.plot(x_pdf,pdf_res,label='TKE_res')
+axs.plot(x_pdf,pdf_sgs,label='TKE_sgs')
+
+axs.set_xlabel('TKE')
+axs.set_ylabel('PDF')
+axs.set_title('PDFs at z level '+str(lvl))
+axs.legend()
+
+plt.show()
+
+#%%Plot PDFs of TKE resolved and sgs at a selected vertical level
+
+lvl = 0
+
+TKE_res_lvl = TKE_res[:,:,lvl].flatten()
+TKE_sgs_lvl = TKE_sgs[:,:,lvl].flatten()
+
+TKE_res_lvl = TKE_res_lvl[np.isfinite(TKE_res_lvl)]
+TKE_sgs_lvl = TKE_sgs_lvl[np.isfinite(TKE_sgs_lvl)]
+
+x_pdf = np.linspace(min(TKE_res_lvl.min(),TKE_sgs_lvl.min()),\
+                    max(TKE_res_lvl.max(),TKE_sgs_lvl.max()),1000)
+
+kde_res = gaussian_kde(TKE_res_lvl)
+pdf_res = kde_res(x_pdf)
+
+kde_sgs = gaussian_kde(TKE_sgs_lvl)
+pdf_sgs = kde_sgs(x_pdf)
+
+fig,axs = plt.subplots(1,1,tight_layout=True)
+
+axs.plot(x_pdf,pdf_res,label='TKE_res')
+axs.plot(x_pdf,pdf_sgs,label='TKE_sgs')
+
+axs.set_xlabel('TKE')
+axs.set_ylabel('PDF')
+axs.set_title('PDFs at z level '+str(lvl))
+axs.legend()
+
+plt.show()
+
+#%%Plot pcolor of TKE_tot
+
+fig,axs = plt.subplots(1,1,tight_layout=True)
+
+axs.pcolormesh(x,z_uvp,(TKE_tot[:,ny//2,:nz]*(uscale**2)).T,cmap='viridis',vmin=0,vmax=2)
+
+plt.show()
+
+#%%Anisotropy tensor diagonal terms
+
+Bxx = Rxx_tot/(2*TKE_tot) - 1/3
+Byy = Ryy_tot/(2*TKE_tot) - 1/3
+Bzz = Rzz_tot/(2*TKE_tot) - 1/3
+B_trace  = Bxx + Byy + Bzz
+
+#%%Compute the memory time scale
+
+from matplotlib.colors import LogNorm
+
+T = 3 / (checkpnt_aniso['S_uvp'][:, :, :nz] * uscale / zi) / 3600
+
+T_plot = np.ma.masked_less_equal(T[:, ny // 2, :].T, 0)
+
+fig, ax = plt.subplots(1, 1, tight_layout=True)
+
+p = ax.pcolormesh(
+    x,
+    z_uvp,
+    T_plot,
+    cmap='viridis',
+    norm=LogNorm(),
+    shading='auto'
+)
+
+cbar = fig.colorbar(p, ax=ax)
+cbar.set_label(r'$T$ [h]')
+
+# Contour levels expressed in hours
+levels = [1 / 60, 10/60, 1]
+
+cs = ax.contour(
+    x,
+    z_uvp,
+    T_plot,
+    levels=levels,
+    colors='white',
+    linewidths=1.2
+)
+
+# Custom contour labels
+labels = {
+    1 / 60: '1 min',
+    10 / 60: '10 min',
+    1: '1 h'
+}
+
+ax.clabel(cs, fmt=labels, inline=True, fontsize=9)
+
+plt.show()
+
+#%%Plot PDF of the memory time scale a given vertical level
+
+lvl = 40
+
+T_lvl = T[:,:,lvl].flatten()*60
+
+T_lvl = T_lvl[np.isfinite(T_lvl)]
+
+x_pdf = np.linspace(min(T_lvl), max(T_lvl),1000)
+
+kde = gaussian_kde(T_lvl)
+pdf = kde(x_pdf)
+
+fig,axs = plt.subplots(1,1,tight_layout=True)
+
+axs.plot(x_pdf,pdf,label='T')
+
+axs.set_xlabel('T')
+axs.set_ylabel('PDF')
+axs.set_title('PDFs at z level '+str(lvl))
+axs.legend()
+
+plt.show()
+
+#%%Resolution study on the height at which the resolved TKE dominates the SGS TKE from a median profile perspective
+#------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------
+#%%Import the data
+
+zi = 1000
+nz = [64, 128, 256]
+step = 110000
+path = '/scratch/general/nfs1/u1450851/LES_Sims/'
+sim = 'test_tkesgs_tii_'
+checkpnt_aniso = dict()
+for n in range(0,len(nz)):
+    checkpnt_aniso[str(nz[n])] = read_checkpoint_aniso(path+sim+str(nz[n])+'/output_checkpoint/',[step],nz[n],nz[n],nz[n])
+
+#%%Compute REynolds stresses and TKE, resolved and SGS
+
+Rxx_res = dict(); Rxx_sgs = dict(); Rxx_tot = dict()
+Ryy_res = dict(); Ryy_sgs = dict(); Ryy_tot = dict()
+Rzz_res = dict(); Rzz_sgs = dict(); Rzz_tot = dict()
+Rxy_res = dict(); Rxy_sgs = dict(); Rxy_tot = dict()
+Rxz_res = dict(); Rxz_sgs = dict(); Rxz_tot = dict()
+Ryz_res = dict(); Ryz_sgs = dict(); Ryz_tot = dict()
+TKE_res = dict(); TKE_sgs = dict(); TKE_tot = dict(); TKE_res_rat = dict(); TKE_sgs_rat = dict()
+
+for i in range(0,len(nz)):
+    
+    Rxx_res[str(nz[i])] = checkpnt_aniso[str(nz[i])]['uu_new'][:,:,:nz[i]] - checkpnt_aniso[str(nz[i])]['u_new'][:,:,:nz[i]]*checkpnt_aniso[str(nz[i])]['u_new'][:,:,:nz[i]]
+    Rxx_sgs[str(nz[i])] = - checkpnt_aniso[str(nz[i])]['txx_new'][:,:,:nz[i]] + (2/3)*checkpnt_aniso[str(nz[i])]['tke_sgs_new'][:,:,:nz[i]]
+    Rxx_tot[str(nz[i])] = Rxx_res[str(nz[i])] + Rxx_sgs[str(nz[i])]
+
+    Ryy_res[str(nz[i])] = checkpnt_aniso[str(nz[i])]['vv_new'][:,:,:nz[i]] - checkpnt_aniso[str(nz[i])]['v_new'][:,:,:nz[i]]*checkpnt_aniso[str(nz[i])]['v_new'][:,:,:nz[i]]
+    Ryy_sgs[str(nz[i])] = - checkpnt_aniso[str(nz[i])]['tyy_new'][:,:,:nz[i]] + (2/3)*checkpnt_aniso[str(nz[i])]['tke_sgs_new'][:,:,:nz[i]]
+    Ryy_tot[str(nz[i])] = Ryy_res[str(nz[i])] + Ryy_sgs[str(nz[i])]
+
+    Rzz_res[str(nz[i])] = checkpnt_aniso[str(nz[i])]['ww_new'][:,:,:nz[i]] - checkpnt_aniso[str(nz[i])]['w_new'][:,:,:nz[i]]*checkpnt_aniso[str(nz[i])]['w_new'][:,:,:nz[i]]
+    Rzz_sgs[str(nz[i])] = - checkpnt_aniso[str(nz[i])]['tzz_new'][:,:,:nz[i]] + (2/3)*checkpnt_aniso[str(nz[i])]['tke_sgs_new'][:,:,:nz[i]]
+    Rzz_tot[str(nz[i])] = Rzz_res[str(nz[i])] + Rzz_sgs[str(nz[i])]
+
+    Rxy_res[str(nz[i])] = checkpnt_aniso[str(nz[i])]['uv_new'][:,:,:nz[i]] - checkpnt_aniso[str(nz[i])]['u_new'][:,:,:nz[i]]*checkpnt_aniso[str(nz[i])]['v_new'][:,:,:nz[i]]
+    Rxy_sgs[str(nz[i])] = - checkpnt_aniso[str(nz[i])]['txy_new'][:,:,:nz[i]]
+    Rxy_tot[str(nz[i])] = Rxy_res[str(nz[i])] + Rxy_sgs[str(nz[i])]
+
+    Rxz_res[str(nz[i])] = checkpnt_aniso[str(nz[i])]['uw_new'][:,:,:nz[i]] - checkpnt_aniso[str(nz[i])]['u_new'][:,:,:nz[i]]*checkpnt_aniso[str(nz[i])]['w_new'][:,:,:nz[i]]
+    Rxz_sgs[str(nz[i])] = - checkpnt_aniso[str(nz[i])]['txz_new'][:,:,:nz[i]]
+    Rxz_tot[str(nz[i])] = Rxz_res[str(nz[i])] + Rxz_sgs[str(nz[i])]
+
+    Ryz_res[str(nz[i])] = checkpnt_aniso[str(nz[i])]['vw_new'][:,:,:nz[i]] - checkpnt_aniso[str(nz[i])]['v_new'][:,:,:nz[i]]*checkpnt_aniso[str(nz[i])]['w_new'][:,:,:nz[i]]
+    Ryz_sgs[str(nz[i])] = - checkpnt_aniso[str(nz[i])]['tyz_new'][:,:,:nz[i]]
+    Ryz_tot[str(nz[i])] = Ryz_res[str(nz[i])] + Ryz_sgs[str(nz[i])]
+
+    TKE_res[str(nz[i])] = 0.5*(Rxx_res[str(nz[i])] + Ryy_res[str(nz[i])] + Rzz_res[str(nz[i])])#*(uscale**2)
+    TKE_sgs[str(nz[i])] = 0.5*(Rxx_sgs[str(nz[i])] + Ryy_sgs[str(nz[i])] + Rzz_sgs[str(nz[i])])#*(uscale**2)
+    TKE_tot[str(nz[i])] = TKE_res[str(nz[i])] + TKE_sgs[str(nz[i])]
+
+    TKE_res_rat[str(nz[i])] = (TKE_res[str(nz[i])])/(TKE_tot[str(nz[i])])
+    TKE_sgs_rat[str(nz[i])] = (TKE_sgs[str(nz[i])])/(TKE_tot[str(nz[i])])
+
+#%%Plot profiles of the fractional contribution
+
+lz = 1
+dz = []
+for i in range(0,len(nz)):
+    dz.append(lz/nz[i])
+
+fig,axs = plt.subplots(1,1,tight_layout=True)
+
+colors = ['r','g','blue']
+
+for i in range(0,len(nz)):
+    
+    axs.plot(np.mean(TKE_res_rat[str(nz[i])],axis=(0,1)),np.arange(0,nz[i])*float(dz[i]) + float(dz[i])/2,label=str(nz[i]),color=colors[i])
+    # axs.axhline(dz*np.where(np.median(TKE_res_rat[str(nz[i])],axis=(0,1))>0.5)[0][0],color=colors[i],linestyle='--')
+    # axs.axhline(dz*np.where(np.median(TKE_res_rat[str(nz[i])],axis=(0,1))>0.6)[0][0],color=colors[i],linestyle='--')
+    # axs.axhline(dz*np.where(np.median(TKE_res_rat[str(nz[i])],axis=(0,1))>0.7)[0][0],color=colors[i],linestyle='--')
+    # axs.axhline(float(dz[i])*np.where(np.median(TKE_res_rat[str(nz[i])],axis=(0,1))>0.8)[0][0],color=colors[i],linestyle='--')
+
+axs.set_ylabel('z')
+axs.set_xlabel(r'$f^{res}$')
+axs.legend()
+axs.set_xlim(0,1)
+axs.set_ylim(0,1)
+axs.grid()
+axs.set_title('Low Shear')
+
+plt.show()
 
 
 

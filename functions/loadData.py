@@ -262,10 +262,6 @@ def load_tkevarGigi(Nx,Ny,Nz,NumVariablesTKE,NumIt,NumFiles,StartTime,path,varda
         
         print('Done computing the cumulative sum for data in file = ', FileName)
 
-
-
-
-
     print('Done adding the data')
 
     for i in range(0,NumVariablesTKE):

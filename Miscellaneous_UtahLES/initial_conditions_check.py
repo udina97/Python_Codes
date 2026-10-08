@@ -5,7 +5,7 @@ Created on Fri May  2 10:42:15 2025
 
 @author: u1450851
 """
-
+#%%
 import numpy as np
 import os
 
@@ -182,13 +182,13 @@ def load2decomp_initialcond_SC(folder, fs3D1, nx, ny, nz):
 
 #%%Load initial conditions
 
-nx = 64
-ny = 64
-nz = 64
+nx = 128
+ny = 128
+nz = 128
 
-lx = 2*np.pi
-ly = 2*np.pi
-lz = 1
+lx = 5.120
+ly = 5.120
+lz = 2.048
 
 dx = lx/nx
 dy = ly/ny
@@ -200,14 +200,14 @@ z_w = np.arange(0,nz)*dz
 # path = '/uufs/chpc.utah.edu/common/home/calaf-group3/Giulia_research3/miscellaneous/'
 path = '/scratch/general/nfs1/u1450851/LES_Sims/'
 
-sim = 'test_mod_grad'
+sim = 'simC_Patton2011'
 
-fs3D1 = ['u','v','w']
+fs3D1 = ['u','v','w','T']
 
-ic = load2decomp_initialcond(path+sim+'/', nx, ny, nz)
-# ic_s = load2decomp_initialcond_SC(path+sim+'/', fs3D1, nx, ny, nz)
+# ic = load2decomp_initialcond(path+sim+'/', nx, ny, nz)
+ic_s = load2decomp_initialcond_SC(path+sim+'/', fs3D1, nx, ny, nz)
 
-plot_initcond(ic, fs3D1, z_uvp, z_w)
+plot_initcond(ic_s, fs3D1, z_uvp, z_w)
 
 
 #%%

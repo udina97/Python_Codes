@@ -28,14 +28,15 @@ from loadData import load_2Dfield
 from loadData import load_tkevar
 from loadData import load_tkevarGigi
 from loadData import load_anisotropy
+from loadData import load_tke_sgs
 
 #%% Defining the main variables and loading/averaging the RAV_output data from the LES
 
 # Variables that define characteristics of the data saved in the RAV_output files:
 
-Nx = 256
-Ny = 256
-Nz = 256
+Nx = 128
+Ny = 128
+Nz = 128
 # Lx = 2*math.pi
 # Ly = 2*math.pi
 # Lz = 1
@@ -43,15 +44,16 @@ Nz = 256
 # dy = Ly/Ny
 # dz = Lz/Nz
 
-NumVariables = 28 #29 if only xb and yb #31 if phim and phih 3D #27 if none of the previous variables are there #28 if L3D is computed
-NumVariablesAniso = 2 #9
+NumVariables = 28 #27 if tke_sgs not computed #28 if tke_sgs is computed
+NumVariablesAniso = 2
 NumVariablesTKE = 47
-NumVariablesSC = 10 #10 if not studying the temperature variance #22 if studying T variance
+NumVariablesSC = 22 #10 if not studying the temperature variance #22 if studying T variance
 NumVariables_2D_SC = 8
 NumVariables_2D = 1
 NumVariablesTKEGigi = 64
+NumVariablesE = 10
 
-NumIt = 10000 #Giulia's Data
+NumIt = 5500 #Giulia's Data
 # NumFiles = 3
 # NumRAV = 1
 # StartTime = 1488000
@@ -67,13 +69,14 @@ anisotropy_flag = True
 
 #%% Loading/averaging the anisotropy 3D RAV_output data from the LES
 
-NumFile = [1]#,2,4,6]
-StartTimes = [110000]#,75000,69000,63000]
-name_ext = ['15']#,'10','20','30']
+NumFile = [1,1,1,1]
+StartTimes = [128000,122500,117000,111500]
+# name_ext = ['15']#,'10','20','30']
 # name = ['K','L','M','N','Q','R','S','T']
 # name = ['A','B','C','D','E','F','G','H','I','J']
 # name = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T']
-name = ['test_tkesgs_tii_lowshear_256']
+name = ['simC_Patton2011']
+
 for j in range(len(name)):
     # sim = 'RandTurbStats/256/Aniso_1ms_' + name[j]
     path = '/scratch/general/nfs1/u1450851/LES_Sims/'+name[j]+'/output_RAV/'
@@ -83,6 +86,23 @@ for j in range(len(name)):
         # StartTime = 63000 + NumIt*i
         StartTime = StartTimes[i]
         NumFiles = NumFile[i]
+        
+        #############################################################################################################################################
+        
+        print('Calling function: load_tke_sgs')
+        
+        ##-For the tke sgs outputs
+        dataE = xr.DataArray(np.ones(shape = (Nx,Ny,Nz,NumVariablesE),order='F'),\
+                            dims=('x', 'y','z','variable'), coords = {'variable':['avgE_w','avgE_uvp',\
+                            'avgRHS','avgProd','avgDiss','avgNut','avgNuh','avgKTX','avgKTY',\
+                            'avgKTZ']}) 
+            
+        vardata = xr.DataArray(np.ones(shape = (Nx,Ny,Nz,NumVariablesE),order='F'),\
+                            dims=('x', 'y','z','variable'), coords = {'variable':['avgE_w','avgE_uvp',\
+                            'avgRHS','avgProd','avgDiss','avgNut','avgNuh','avgKTX','avgKTY',\
+                            'avgKTZ']})
+        
+        dataE = load_tke_sgs(Nx,Ny,Nz,NumVariablesE,NumIt,NumFiles,StartTime,path,vardata)
         
         #############################################################################################################################################
     
@@ -200,7 +220,7 @@ for j in range(len(name)):
         
         #% Loading/averaging the scalar 3D RAV_output data from the LES
         
-        # print('Calling function: load_scalar')
+        print('Calling function: load_scalar')
         
         # # StartTime = 2572000
         
@@ -215,54 +235,54 @@ for j in range(len(name)):
         #                     'avgUT','avgVT','avgWT','avgUT_sgs','avgVT_sgs','avgWT_sgs','avg_nus',\
         #                     'avg_ds']})
         
-        #For temperature variance analysis:
-        # dataS = xr.DataArray(np.ones(shape = (Nx,Ny,Nz,NumVariablesSC),order='F'),\
-        #                         dims=('x','y','z','variable'), coords = {'variable':['avgT','avgT2',\
-        #                         'avgUT','avgVT','avgWT','avgUTT','avgVTT','avgWTT','avgDTDX','avgDTDY','avgDTDZ',\
-        #                         'avgDTDX2','avgDTDY2','avgDTDZ2','avgTUT_sgs','avgTVT_sgs','avgTWT_sgs',\
-        #                         'avgUT_sgs','avgVT_sgs','avgWT_sgs','avg_nus',\
-        #                         'avg_ds']}) 
+        ##For temperature variance analysis:
+        dataS = xr.DataArray(np.ones(shape = (Nx,Ny,Nz,NumVariablesSC),order='F'),\
+                                dims=('x','y','z','variable'), coords = {'variable':['avgT','avgT2',\
+                                'avgUT','avgVT','avgWT','avgUTT','avgVTT','avgWTT','avgDTDX','avgDTDY','avgDTDZ',\
+                                'avgDTDX2','avgDTDY2','avgDTDZ2','avgTUT_sgs','avgTVT_sgs','avgTWT_sgs',\
+                                'avgUT_sgs','avgVT_sgs','avgWT_sgs','avg_nus',\
+                                'avg_ds']}) 
         
-        # vardataS = xr.DataArray(np.ones(shape = (Nx,Ny,Nz,NumVariablesSC),order='F'),\
-        #                         dims=('x','y','z','variable'), coords = {'variable':['avgT','avgT2',\
-        #                         'avgUT','avgVT','avgWT','avgUTT','avgVTT','avgWTT','avgDTDX','avgDTDY','avgDTDZ',\
-        #                         'avgDTDX2','avgDTDY2','avgDTDZ2','avgTUT_sgs','avgTVT_sgs','avgTWT_sgs',\
-        #                         'avgUT_sgs','avgVT_sgs','avgWT_sgs','avg_nus',\
-        #                         'avg_ds']}) 
+        vardataS = xr.DataArray(np.ones(shape = (Nx,Ny,Nz,NumVariablesSC),order='F'),\
+                                dims=('x','y','z','variable'), coords = {'variable':['avgT','avgT2',\
+                                'avgUT','avgVT','avgWT','avgUTT','avgVTT','avgWTT','avgDTDX','avgDTDY','avgDTDZ',\
+                                'avgDTDX2','avgDTDY2','avgDTDZ2','avgTUT_sgs','avgTVT_sgs','avgTWT_sgs',\
+                                'avgUT_sgs','avgVT_sgs','avgWT_sgs','avg_nus',\
+                                'avg_ds']}) 
         
-        # dataS = load_scalar(Nx,Ny,Nz,NumVariablesSC,NumIt,NumFiles,StartTime,path,vardataS)
+        dataS = load_scalar(Nx,Ny,Nz,NumVariablesSC,NumIt,NumFiles,StartTime,path,vardataS)
         
         ###########################################################################################################################################
         
         #% Loading/averaging the momentum 2D RAV_output data from the LES
         
-        # print('Calling function: load_momentum_2D')
-        # # StartTime = 2556000
+        print('Calling function: load_momentum_2D')
+        # StartTime = 2556000
         
-        # data_2D = xr.DataArray(np.ones(shape = (Nx,Ny,NumVariables_2D),order='F'),\
-        #                 dims=('x','y','variable'), coords = {'variable':['Mav_ustar']})
+        data_2D = xr.DataArray(np.ones(shape = (Nx,Ny,NumVariables_2D),order='F'),\
+                        dims=('x','y','variable'), coords = {'variable':['Mav_ustar']})
             
-        # vardata = xr.DataArray(np.ones(shape = (Nx,Ny,NumVariables_2D),order='F'),\
-        #                 dims=('x','y','variable'), coords = {'variable':['Mav_ustar']})
+        vardata = xr.DataArray(np.ones(shape = (Nx,Ny,NumVariables_2D),order='F'),\
+                        dims=('x','y','variable'), coords = {'variable':['Mav_ustar']})
         
-        # data_2D = load_momentum_2D(Nx,Ny,NumVariables_2D,NumIt,NumFiles,StartTime,path,vardata)
+        data_2D = load_momentum_2D(Nx,Ny,NumVariables_2D,NumIt,NumFiles,StartTime,path,vardata)
         
         #############################################################################################################################################
         
         #% Loading/averaging the scalar 2D RAV_output data from the LES
         
-        # print('Calling function: load_scalar_2D')
+        print('Calling function: load_scalar_2D')
         
         
-        # dataS_2D = xr.DataArray(np.ones(shape = (Nx,Ny,NumVariables_2D_SC),order='F'),\
-        #                 dims=('x','y','variable'), coords = {'variable':['Mav_wstar','Mav_L',\
-        #                 'Mav_phi_m','Mav_psi_m','Mav_phi_h','Mav_psi_h','Mav_sfcval','Mav_sfcflux']})
+        dataS_2D = xr.DataArray(np.ones(shape = (Nx,Ny,NumVariables_2D_SC),order='F'),\
+                        dims=('x','y','variable'), coords = {'variable':['Mav_wstar','Mav_L',\
+                        'Mav_phi_m','Mav_psi_m','Mav_phi_h','Mav_psi_h','Mav_sfcval','Mav_sfcflux']})
             
-        # vardata = xr.DataArray(np.ones(shape = (Nx,Ny,NumVariables_2D_SC),order='F'),\
-        #                 dims=('x','y','variable'), coords = {'variable':['Mav_wstar','Mav_L',\
-        #                 'Mav_phi_m','Mav_psi_m','Mav_phi_h','Mav_psi_h','Mav_sfcval','Mav_sfcflux']})
+        vardata = xr.DataArray(np.ones(shape = (Nx,Ny,NumVariables_2D_SC),order='F'),\
+                        dims=('x','y','variable'), coords = {'variable':['Mav_wstar','Mav_L',\
+                        'Mav_phi_m','Mav_psi_m','Mav_phi_h','Mav_psi_h','Mav_sfcval','Mav_sfcflux']})
         
-        # dataS_2D = load_scalar_2D(Nx,Ny,NumVariables_2D_SC,NumIt,NumFiles,StartTime,path,vardata)
+        dataS_2D = load_scalar_2D(Nx,Ny,NumVariables_2D_SC,NumIt,NumFiles,StartTime,path,vardata)
         
         ###########################################################################################################################################
         
@@ -279,6 +299,16 @@ for j in range(len(name)):
         #% Saving the loaded Data into NumPy files
         
         #Define the path where to save the NetCDF data:
+            
+        pathOUT_E3D = path + '../data/TKE_SGS_3D/'
+        if os.path.exists(pathOUT_E3D):
+            print(f"The forlder '{pathOUT_E3D}' aready exists.")
+        else:
+            os.makedirs(pathOUT_E3D)
+            print(f"Created folder '{pathOUT_E3D}'.")
+        os.chdir(pathOUT_E3D)
+        dataE.to_netcdf('Data_tke_sgs_'+str(StartTime)+'.nc')
+        # dataE.to_netcdf('Data_tke_sgs_'+name_ext[i]+'min.nc')
     
         pathOUT_A = path + '../data/Anisotropy/'
         if os.path.exists(pathOUT_A):
@@ -296,37 +326,37 @@ for j in range(len(name)):
             os.makedirs(pathOUT_M3D)
             print(f"Created folder '{pathOUT_M3D}'.")
         os.chdir(pathOUT_M3D)
-        # data.to_netcdf('Data_Momentum_'+str(StartTime)+'.nc')
-        data.to_netcdf('Data_Momentum_'+name_ext[i]+'min.nc')
+        data.to_netcdf('Data_Momentum_'+str(StartTime)+'.nc')
+        # data.to_netcdf('Data_Momentum_'+name_ext[i]+'min.nc')
         
-        # pathOUT_M2D = path + '../data/Momentum2D/'
-        # if os.path.exists(pathOUT_M2D):
-        #     print(f"The forlder '{pathOUT_M2D}' aready exists.")
-        # else:
-        #     os.makedirs(pathOUT_M2D)
-        #     print(f"Created folder '{pathOUT_M2D}'.")
-        # os.chdir(pathOUT_M2D)
-        # # data_2D.to_netcdf('Data_Momentum_2D_'+str(StartTime)+'.nc')
+        pathOUT_M2D = path + '../data/Momentum2D/'
+        if os.path.exists(pathOUT_M2D):
+            print(f"The forlder '{pathOUT_M2D}' aready exists.")
+        else:
+            os.makedirs(pathOUT_M2D)
+            print(f"Created folder '{pathOUT_M2D}'.")
+        os.chdir(pathOUT_M2D)
+        data_2D.to_netcdf('Data_Momentum_2D_'+str(StartTime)+'.nc')
         # data_2D.to_netcdf('Data_Momentum_2D_'+name_ext[i]+'min.nc')
         
-        # pathOUT_S3D = path + '../data/Scalar3D/'
-        # if os.path.exists(pathOUT_S3D):
-        #     print(f"The forlder '{pathOUT_S3D}' aready exists.")
-        # else:
-        #     os.makedirs(pathOUT_S3D)
-        #     print(f"Created folder '{pathOUT_S3D}'.")
-        # os.chdir(pathOUT_S3D)
-        # # dataS.to_netcdf('Data_Scalar_'+str(StartTime)+'.nc')
+        pathOUT_S3D = path + '../data/Scalar3D/'
+        if os.path.exists(pathOUT_S3D):
+            print(f"The forlder '{pathOUT_S3D}' aready exists.")
+        else:
+            os.makedirs(pathOUT_S3D)
+            print(f"Created folder '{pathOUT_S3D}'.")
+        os.chdir(pathOUT_S3D)
+        dataS.to_netcdf('Data_Scalar_'+str(StartTime)+'.nc')
         # dataS.to_netcdf('Data_Scalar_'+name_ext[i]+'min.nc')
         
-        # pathOUT_S2D = path + '../data/Scalar2D/'
-        # if os.path.exists(pathOUT_S2D):
-        #     print(f"The forlder '{pathOUT_S2D}' aready exists.")
-        # else:
-        #     os.makedirs(pathOUT_S2D)
-        #     print(f"Created folder '{pathOUT_S2D}'.")
-        # os.chdir(pathOUT_S2D)
-        # # dataS_2D.to_netcdf('Data_Scalar_2D_'+str(StartTime)+'.nc')
+        pathOUT_S2D = path + '../data/Scalar2D/'
+        if os.path.exists(pathOUT_S2D):
+            print(f"The forlder '{pathOUT_S2D}' aready exists.")
+        else:
+            os.makedirs(pathOUT_S2D)
+            print(f"Created folder '{pathOUT_S2D}'.")
+        os.chdir(pathOUT_S2D)
+        dataS_2D.to_netcdf('Data_Scalar_2D_'+str(StartTime)+'.nc')
         # dataS_2D.to_netcdf('Data_Scalar_2D_'+name_ext[i]+'min.nc')
 
 # data.to_netcdf('Data_Momentum_'+str(StartTime)+'.nc')  #This saves the data as NetCDF files, that keep the xarray form.

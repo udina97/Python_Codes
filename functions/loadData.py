@@ -717,3 +717,91 @@ def load_snapshot(Nx,Ny,Nz,NumVariables,file_name,path):
 ##############################################################################
 ##############################################################################
 ##############################################################################
+
+# load_tke_sgs(): is a function that loads the Output_Rav files for the SGS TKE
+##############################################################################
+
+def load_tke_sgs(Nx,Ny,Nz,NumVariables,NumIt,NumFiles,StartTime,path,vardata):
+    "Calling function to upload data from the Output_Rav files"
+
+    import numpy as np
+    import xarray as xr
+    import struct
+    import timeit
+    #import math
+
+    # List of Variables that have been saved in the binary file 'Rav_output':
+    #Variable = ['e_sgs_w','e_sgs_uvp','rhs_uvp','Prod','Diss','nu_t','nu_h','ktx','kty','ktz']
+
+    print('Defining arrays')
+
+    t0 = timeit.default_timer()
+
+    # vardata = xr.DataArray(np.ones(shape = (Nx,Ny,Nz,NumVariables),order='F'),\
+    #                     dims=('x', 'y','z','variable'), coords = {'variable':['avgE_w','avgE_uvp',\
+    #                     'avgRHS','avgProd','avgDiss','avgNut','avgNuh','avgKTX','avgKTY',\
+    #                     'avgKTZ']})
+
+
+    tmp = np.zeros((Nx*Ny*Nz, 1),'d')  #This is a temporal variable used as a bridge.
+    tmpdata = np.zeros((NumVariables*Nx*Ny*Nz),'d') #This is a temporal variable used as a bridge.
+    sumdata = np.zeros((NumVariables*Nx*Ny*Nz),'d') #This is a temporal variable used as a bridge.
+
+    t1 = timeit.default_timer()
+
+    print('Loop over files')
+
+    # Loop over the different RAV_output files:
+
+    for n in range(0,NumFiles):
+        if (StartTime + n*NumIt < 10000):
+            FileName = 'RAV_00000'+ str(StartTime + n*NumIt) + '_sgs_tke_3D.dat'
+        elif (StartTime + n*NumIt < 100000) and (StartTime + n*NumIt >= 10000):
+            FileName = 'RAV_0000'+ str(StartTime + n*NumIt) + '_sgs_tke_3D.dat'
+        elif (StartTime + n*NumIt < 1000000) and (StartTime + n*NumIt >= 100000):
+            FileName = 'RAV_000'+ str(StartTime + n*NumIt) + '_sgs_tke_3D.dat'
+        else:
+            FileName = 'RAV_00'+ str(StartTime + n*NumIt) + '_sgs_tke_3D.dat'
+            
+        f = open(path+FileName,"rb")
+
+        #Next we read the data and we dump it all, as strings into a new variable.
+
+
+        print('Done reading the binari data for file = ', FileName)
+
+        for i in range(0,NumVariables):
+
+            data_raw = f.read(Nx*Ny*Nz*8)
+
+            n0 = (i)*(Nx*Ny*Nz)
+            nf = (i+1)*(Nx*Ny*Nz)
+
+            #Next we read the strings from above into double-type numbers, that are stored in data.
+            tmpdata[n0:nf] = np.array(struct.unpack('d'*(Nx*Ny*Nz), data_raw))
+
+
+        #Now we can delete the main data matrix uploaded initially to free some memory
+        del data_raw
+        f.close()
+        
+        sumdata = sumdata + tmpdata/(NumFiles*NumIt)
+        
+        print('Done computing the cumulative sum for data in file = ', FileName)
+
+
+    print('Done adding the data')
+
+    for i in range(0,NumVariables):
+            print('Variable =', i)
+            n0 = (i)*(Nx*Ny*Nz)
+            nf = (i+1)*(Nx*Ny*Nz)
+            tmp = sumdata[n0:nf]
+
+            vardata[:,:,:,i] = np.reshape(tmp,[Nx,Ny,Nz],'F')
+
+
+    del i,n,tmp
+
+
+    return(vardata)

@@ -25,13 +25,13 @@ from loadData import load_momentum
 
 #%%Simulation parameters
 
-nx = 128
-ny = 128
-nz = 128
+nx = 64
+ny = 64
+nz = 64
 
-lx = 5.120 #2*np.pi
-ly = 5.120 #2*np.pi
-lz = 2.048 #1
+lx = 5120 #2*np.pi
+ly = 5120 #2*np.pi
+lz = 2048 #1
 
 dx = lx/nx
 dy = ly/ny
@@ -46,17 +46,17 @@ z_uvp = np.arange(0,nz)*dz + dz/2
 z_w = np.arange(0,nz)*dz
 
 #%%Load surface checkpoint/istantaneous fields 
-# sim = 'yb_test_v2'
+# sim = 'yb_test_v2'21583432158343
 
 sim = 'simC_Patton2011'
 
 path = '/scratch/general/nfs1/u1450851/LES_Sims/'
 
-step = 51000
+step = 27500
 avgtime = 15   
 
 # checkpnt = read_checkpoint_mom(path+sim+'/output_checkpoint/',[step],nx,ny,nz)
-checkpnt_sc = read_checkpoint(path+sim+'/output_checkpoint/',[step],nx,ny,nz, False)
+# checkpnt_sc = read_checkpoint(path+sim+'/output_checkpoint/',[step],nx,ny,nz, False)
 checkpnt_aniso = read_checkpoint_aniso(path+sim+'/output_checkpoint/',[step],nx,ny,nz)
 checkpnt_tke = read_checkpoint_tke(path+sim+'/output_checkpoint/',[step],nx,ny,nz)
 checkpnt_sfc = read_checkpoint_sfc_L(path+sim+'/output_checkpoint/',[step],nx,ny)
@@ -84,6 +84,15 @@ checkpnt_sfc = read_checkpoint_sfc_L(path+sim+'/output_checkpoint/',[step],nx,ny
 
 # data = load_momentum(nx,ny,nz,NumVariables,NumIt,NumFiles,StartTime,path+sim+'/output_RAV/',vardata,anisotropy_flag)
 
+#%%
+
+steps = [10000,20000,30000,40000,50000,51000,55000,60500,66000,71500,77000,82500,88000,93500,99000,104500,110000,115500,121000,126500,128000]
+for i in range(len(steps)):
+    checkpnt_aniso = read_checkpoint_aniso(path+sim+'/output_checkpoint/',[steps[i]],nx,ny,nz)
+    yB = checkpnt_aniso['yB']
+    if np.any(yB<0):
+        print(f'Negative yB at {steps[i]}')
+        
 #%%Plot anisotropy invariant
 
 fig,axs = plt.subplots(1,2,tight_layout=True,figsize=(10,4))

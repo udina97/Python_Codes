@@ -52,28 +52,28 @@ z_w = np.arange(0,nz)*dz
 #%%Load RAV data
 
 path = '/scratch/general/nfs1/u1450851/LES_Sims/'
-sim = 'simC_Patton2011'
+sim = 'simC_Patton2011_aniso'
 
 step = 128000
 time_ext = '30min'
 
 cases = ['a','c']
 
-mom3D = dict(); sc3D = dict(); tke3D = dict(); mom2D = dict(); sc2D = dict()
+mom3D = dict(); sc3D = dict(); tke3D = dict(); mom2D = dict(); sc2D = dict(); aniso3D = dict()
 
-# aniso3D['c'] = xr.open_dataarray(path+sim+'/data/Anisotropy/Data_Anisotropy_'+str(time_ext)+'.nc').data
-mom3D['c'] = xr.open_dataarray(path+sim+'/data/Momentum3D/Data_Momentum_'+str(time_ext)+'.nc').data
-sc3D['c'] = xr.open_dataarray(path+sim+'/data/Scalar3D/Data_Scalar_'+str(time_ext)+'.nc').data
-tke3D['c'] = xr.open_dataarray(path+sim+'/data/TKE_SGS_3D/Data_tke_sgs_'+str(time_ext)+'.nc').data
-mom2D['c'] = xr.open_dataarray(path+sim+'/data/Momentum2D/Data_Momentum_2D_'+str(time_ext)+'.nc').data
-sc2D['c'] = xr.open_dataarray(path+sim+'/data/Scalar2D/Data_Scalar_2D_'+str(time_ext)+'.nc').data
+aniso3D['c'] = xr.open_dataarray(path+sim+'/data/Anisotropy/Data_Anisotropy_'+str(step)+'.nc').data
+mom3D['c'] = xr.open_dataarray(path+sim+'/data/Momentum3D/Data_Momentum_'+str(step)+'.nc').data
+sc3D['c'] = xr.open_dataarray(path+sim+'/data/Scalar3D/Data_Scalar_'+str(step)+'.nc').data
+tke3D['c'] = xr.open_dataarray(path+sim+'/data/TKE_SGS_3D/Data_tke_sgs_'+str(step)+'.nc').data
+mom2D['c'] = xr.open_dataarray(path+sim+'/data/Momentum2D/Data_Momentum_2D_'+str(step)+'.nc').data
+sc2D['c'] = xr.open_dataarray(path+sim+'/data/Scalar2D/Data_Scalar_2D_'+str(step)+'.nc').data
 
-# aniso3D['a'] = xr.open_dataarray(path+sim+'_aniso'+'/data/Anisotropy/Data_Anisotropy_'+str(time_ext)+'.nc').data
-mom3D['a'] = xr.open_dataarray(path+sim+'_aniso'+'/data/Momentum3D/Data_Momentum_'+str(time_ext)+'.nc').data
-sc3D['a'] = xr.open_dataarray(path+sim+'_aniso'+'/data/Scalar3D/Data_Scalar_'+str(time_ext)+'.nc').data
-tke3D['a'] = xr.open_dataarray(path+sim+'_aniso'+'/data/TKE_SGS_3D/Data_tke_sgs_'+str(time_ext)+'.nc').data
-mom2D['a'] = xr.open_dataarray(path+sim+'_aniso'+'/data/Momentum2D/Data_Momentum_2D_'+str(time_ext)+'.nc').data
-sc2D['a'] = xr.open_dataarray(path+sim+'_aniso'+'/data/Scalar2D/Data_Scalar_2D_'+str(time_ext)+'.nc').data
+aniso3D['a'] = xr.open_dataarray(path+sim+'_noiter_ainit'+'/data/Anisotropy/Data_Anisotropy_'+str(step)+'.nc').data
+mom3D['a'] = xr.open_dataarray(path+sim+'_noiter_ainit'+'/data/Momentum3D/Data_Momentum_'+str(step)+'.nc').data
+sc3D['a'] = xr.open_dataarray(path+sim+'_noiter_ainit'+'/data/Scalar3D/Data_Scalar_'+str(step)+'.nc').data
+tke3D['a'] = xr.open_dataarray(path+sim+'_noiter_ainit'+'/data/TKE_SGS_3D/Data_tke_sgs_'+str(step)+'.nc').data
+mom2D['a'] = xr.open_dataarray(path+sim+'_noiter_ainit'+'/data/Momentum2D/Data_Momentum_2D_'+str(step)+'.nc').data
+sc2D['a'] = xr.open_dataarray(path+sim+'_noiter_ainit'+'/data/Scalar2D/Data_Scalar_2D_'+str(step)+'.nc').data
 
 #Variable = ['u','v','w','p','u2','v2','w2','u3','v3','w3','u4','v4','w4',\
 #            'uv','uw','vw','txx','tyy','tzz','txy','txz','tyz',\
@@ -94,6 +94,37 @@ sc2D['a'] = xr.open_dataarray(path+sim+'_aniso'+'/data/Scalar2D/Data_Scalar_2D_'
 #                     dims=('x', 'y','z','variable'), coords = {'variable':['avgE_w','avgE_uvp',\
 #                     'avgRHS','avgProd','avgDiss','avgNut','avgNuh','avgKTX','avgKTY',\
 #                     'avgKTZ']})
+
+#%%Compute anisotropy invariants from RAV data
+
+xB = dict(); yB = dict(); l3 = dict()
+
+for i in cases:
+    uu = mom3D[i][:,:,:,4] - mom3D[i][:,:,:,0]**2 - mom3D[i][:,:,:,16] + (2/3)*tke3D[i][:,:,:,1]
+    vv = mom3D[i][:,:,:,5] - mom3D[i][:,:,:,1]**2 - mom3D[i][:,:,:,17] + (2/3)*tke3D[i][:,:,:,1]
+    ww = wnode2uvpnode(mom3D[i][:,:,:,6] - mom3D[i][:,:,:,2]**2) - mom3D[i][:,:,:,18] + (2/3)*tke3D[i][:,:,:,1]
+    uv = mom3D[i][:,:,:,13] - mom3D[i][:,:,:,0]*mom3D[i][:,:,:,1] - mom3D[i][:,:,:,19]
+    uw = wnode2uvpnode(mom3D[i][:,:,:,14] - uvpnode2wnode(mom3D[i][:,:,:,0])*mom3D[i][:,:,:,2] - mom3D[i][:,:,:,20])
+    vw = wnode2uvpnode(mom3D[i][:,:,:,15] - uvpnode2wnode(mom3D[i][:,:,:,1])*mom3D[i][:,:,:,2] - mom3D[i][:,:,:,21])
+    
+    [xB[i],yB[i],l3[i]] = Anisotropy(nx,ny,nz,uu,vv,ww,uv,uw,vw)
+
+#%%Plot anisotropy
+
+fig,axs = plt.subplots(2,2,sharey=True,sharex=True,figsize=(11,4))
+
+for i,case in enumerate(cases):
+    # p = axs[0,i].pcolormesh(x,z_uvp,np.mean(yB[case],axis=(1)).T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+    # p = axs[1,i].pcolormesh(x,z_uvp,np.mean(aniso3D[case][:,:,:,1],axis=(1)).T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+    p = axs[1,i].pcolormesh(x,z_uvp,aniso3D[case][:,ny//2,:,1].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+    axs[0,i].set_title(cases[i])
+
+
+cax = fig.add_axes([0.91, 0.11, 0.02, 0.77])
+fig.colorbar(p, cax=cax, orientation='vertical')
+fig.suptitle('yB')
+
+plt.show()
 
 #%%Boundary layer height
 
@@ -152,6 +183,13 @@ for i in cases:
     
     print(f'Mean ustar for ' + sim + f': {np.mean(u_star)}')
 
+    total_shear_force = np.trapz(np.trapz(u_star**2, x=x, axis=1), x=y, axis=0)
+    surface_area = lx * ly
+    mean_shear_stress = total_shear_force / surface_area
+    effective_u_star = np.sqrt(mean_shear_stress)
+    
+    print(f'Effective ustar for ' + sim + f': {effective_u_star}')
+
 axs[0].set_title(r"PDF of $u_*$", fontsize=14)
 axs[1].set_title(r"PDF of $w_*$", fontsize=14)
 
@@ -159,8 +197,12 @@ axs[0].set_xlabel(r"$u_* \,[ms^{-1}]$", fontsize=12)
 axs[1].set_xlabel(r"$w_* \,[ms^{-1}]$", fontsize=12)
 axs[0].set_ylabel("Probability density", fontsize=12)
 
+axs[0].set_ylim(0)
+axs[1].set_ylim(0)
+
 # fig.suptitle(sim, fontsize=16)
 plt.show()
+
 
 #%%Plot profiles of velocity components
 
@@ -214,7 +256,7 @@ for i in cases:
         
     dudz = mom3D[i][:,:,:,22]*(uscale/zi)*(zbl/wstar)
 
-    axs.plot(np.mean(dudz,axis=(0,1)),z_w/zbl,c='k',ls=ls)
+    # axs.plot(np.mean(dudz,axis=(0,1)),z_w/zbl,c='k',ls=ls)
     axs.plot(np.mean(get_dphidz_uvp2w(mom3D[i][:,:,:,0]*uscale, dz)*(zbl/wstar),axis=(0,1))[:-1],z_w[1:]/zbl,c='r',ls=ls)
     # axs.plot(get_dphidz_uvp2w1D(np.mean(mom3D[i][:,:,:,0]*uscale,axis=(0,1)), dz)[:-1]*(zbl/wstar),z_w[1:]/zbl,c='g')
 
@@ -256,9 +298,9 @@ for i in cases:
     vv1D = np.mean(mom3D[i][:,:,:,5],axis=(0,1)) - np.mean(mom3D[i][:,:,:,1]**2,axis=(0,1)) + np.mean(vv_disp,axis=(0,1))
     ww1D = np.mean(wnode2uvpnode(mom3D[i][:,:,:,6]),axis=(0,1)) - np.mean(wnode2uvpnode(mom3D[i][:,:,:,2])**2,axis=(0,1)) + np.mean(ww_disp,axis=(0,1))
     tke1D = 0.5*(uu1D + vv1D + ww1D) + np.mean(tke_sgs,axis=(0,1))
-    U1D = np.sqrt(np.mean(mom3D[i][:,:,:,0]**2,axis=(0,1)) + np.mean(mom3D[i][:,:,:,1]**2,axis=(0,1)) + np.mean(wnode2uvpnode(mom3D[i][:,:,:,2])**2, axis=(0,1)))
+    # U1D = np.sqrt(np.mean(mom3D[i][:,:,:,0]**2,axis=(0,1)) + np.mean(mom3D[i][:,:,:,1]**2,axis=(0,1)) + np.mean(wnode2uvpnode(mom3D[i][:,:,:,2])**2, axis=(0,1)))
     # U1D = np.sqrt(np.mean(mom3D[i][:,:,:,0],axis=(0,1))**2 + np.mean(mom3D[i][:,:,:,1],axis=(0,1))**2 + np.mean(wnode2uvpnode(mom3D[i][:,:,:,2]), axis=(0,1))**2)
-    # U1D = np.mean(np.sqrt(mom3D[i][:,:,:,0]**2 + mom3D[i][:,:,:,1]**2 + wnode2uvpnode(mom3D[i][:,:,:,2]**2)),axis=(0,1))
+    U1D = np.mean(np.sqrt(mom3D[i][:,:,:,0]**2 + mom3D[i][:,:,:,1]**2 + wnode2uvpnode(mom3D[i][:,:,:,2]**2)),axis=(0,1))
     I1D = np.sqrt((2/3)*tke1D)/U1D
 
 

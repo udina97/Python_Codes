@@ -8,14 +8,14 @@ Created on Mon Jul 10 02:29:38 2023
 
 
 
-def read_checkpoint(path, stepouts, nx, ny, nz, read_lagran=None):
+def read_checkpoint(path, stepouts, nx, ny, nz, read_lagran=None, k_sgs=None):
     
     import numpy as np
     import os
     
     fs3D1 = ['u', 'v', 'w', 'RHSx', 'RHSy', 'RHSz']
     fs3D2 = ['Cs_opt2']
-    # fs3D2_uvp = ['k_sgs']
+    fs3D2_uvp = ['k_sgs']
     fs3D2_lag = ['F_LM', 'F_MM', 'F_QN', 'F_NN']
     fs3D3 = ['SC','RHSsc', 'Ds_opt2']
     fs3D3_lag = ['F_KX', 'F_XX', 'F_PY', 'F_YY']
@@ -31,7 +31,10 @@ def read_checkpoint(path, stepouts, nx, ny, nz, read_lagran=None):
         fid.close()
         
         len3D = nx * ny * (nz + 1)
-        n_required = (len(fs3D1) + len(fs3D2) + len(fs3D3)) * len3D #+ (len(fs3D2_uvp))*(nx*ny*nz)
+        if k_sgs:
+            n_required = (len(fs3D1) + len(fs3D2) + len(fs3D3) + len(fs3D2_uvp)) * len3D #+ (len(fs3D2_uvp))*(nx*ny*nz)
+        else:
+            n_required = (len(fs3D1) + len(fs3D2) + len(fs3D3)) * len3D #+ (len(fs3D2_uvp))*(nx*ny*nz)
         n_with_lagran = n_required + (len(fs3D2_lag) + len(fs3D3_lag)) * len3D
         if read_lagran is None:
             has_lagran = tmp.size == n_with_lagran
@@ -63,11 +66,12 @@ def read_checkpoint(path, stepouts, nx, ny, nz, read_lagran=None):
         for kk in range(len(fs3D2)):
             chpt[fs3D2[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz + 1),order = 'F')
             displ += len3D
-
-        # len3D = nx * ny * (nz + 1)
-        # for kk in range(len(fs3D2_uvp)):
-        #     chpt[fs3D2_uvp[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz + 1),order = 'F')
-        #     displ += len3D
+        
+        if k_sgs:
+            len3D = nx * ny * (nz + 1)
+            for kk in range(len(fs3D2_uvp)):
+                chpt[fs3D2_uvp[kk]] = np.reshape(tmp[displ:displ + len3D], (nx, ny, nz + 1),order = 'F')
+                displ += len3D
 
         len3D = nx * ny * (nz + 1)
         if has_lagran:

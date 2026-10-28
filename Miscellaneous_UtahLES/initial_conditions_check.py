@@ -212,7 +212,7 @@ plot_initcond(ic_s, fs3D1, z_uvp, z_w)
 
 #%%
 
-def load_2Dfield(Nx,Ny,path):
+def load_2Dfield(Nx,Ny,path,filename):
     "Calling function to upload data from the Output_Rav_SC files"
 
     import numpy as np
@@ -227,7 +227,7 @@ def load_2Dfield(Nx,Ny,path):
     print('Opening the Surface Temperature file')
 
 
-    FileName = '../input/surface_SC1.dat'
+    FileName = filename
     f = open(path+FileName,"rb")
 
     #Next we read the data and we dump it all, as strings into a new variable.
@@ -253,9 +253,9 @@ def load_2Dfield(Nx,Ny,path):
 import numpy as np
 import matplotlib.pyplot as plt
 
-nx = 256
-ny = 256
-nz = 256
+nx = 128
+ny = 128
+nz = 128
 
 lx = 2*np.pi
 ly = 2*np.pi
@@ -265,10 +265,11 @@ dx = lx/nx
 dy = ly/ny
 dz = lz/nz
 
-path = '/scratch/general/nfs1/u1450851/LES_Sims/'
-path_fig = '/uufs/chpc.utah.edu/common/home/u1450851/Pictures/TempPatch/'
-sim = '800patch_1ms_aniso_fix_local_grn'
-sfcT = load_2Dfield(nx, ny, path+sim+'/input/')
+path = '/uufs/chpc.utah.edu/common/home/u1450851/LES_code/LES-2Ddecomp_TKE/build_old/input/'
+filename = 'surface_SC1_128.dat'
+# path_fig = '/uufs/chpc.utah.edu/common/home/u1450851/Pictures/TempPatch/'
+# sim = '800patch_1ms_aniso_fix_local_grn'
+sfcT = load_2Dfield(nx, ny, path,filename)
 
 fig,axs = plt.subplots(1,1,tight_layout=True,figsize=(7,6))
 

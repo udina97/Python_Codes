@@ -29,7 +29,7 @@ layout = [['a1)', 'a2)', 'a3)', 'a4)'],
           ['e1)', 'e2)', 'e3)', 'e4)'],
           ['f1)', 'f2)', 'f3)', 'f4)']]
 
-fig, axs_dict = plt.subplot_mosaic(layout,figsize=(9,9),sharey=True)
+fig, axs_dict = plt.subplot_mosaic(layout,figsize=(8.5,8.5),sharey=True)
 
 for label, ax in axs_dict.items():
     # Use ScaledTranslation to put the label
@@ -171,7 +171,7 @@ for i in range(0,len(cases)):
     # axs[i,0].set_ylabel(r"hi"+"\n"+r"$z/h_C$",fontsize=15)
     axs[i,1].set_xlim(-0.001,0.01)
     axs[i,2].set_xlim(-0.4,2.5)
-    axs[i,0].tick_params(axis='y',which='major',labelsize=12)
+    axs[i,0].tick_params(axis='y',which='major',labelsize=10.5)
 axs[-2,3].set_xlim(-0.75,0.75)
 axs[-2, 3].tick_params(labelbottom=True)
     
@@ -186,10 +186,10 @@ axs[-1,1].set_xlabel(r"$\sqrt{\overline{u'w'}^2 + \overline{v'w'}^2}/U_G^2$",fon
 axs[-1,2].set_xlabel(r"$\phi_M$",fontsize=13)
 axs[-2,3].set_xlabel(r"$Sk_w$",fontsize=13)
 
-axs[-1,0].tick_params(axis='x',which='major',labelsize=12)
-axs[-1,1].tick_params(axis='x',which='major',labelsize=12)
-axs[-1,2].tick_params(axis='x',which='major',labelsize=12)
-axs[-2,3].tick_params(axis='x',which='major',labelsize=12)
+axs[-1,0].tick_params(axis='x',which='major',labelsize=10.5)
+axs[-1,1].tick_params(axis='x',which='major',labelsize=10.5)
+axs[-1,2].tick_params(axis='x',which='major',labelsize=10.5)
+axs[-2,3].tick_params(axis='x',which='major',labelsize=10.5)
 
 axs[0,0].set_ylabel(r"Flat"+"\n"+r"$z/h_C$",fontsize=15,labelpad=0.1)
 axs[1,0].set_ylabel(r"Sinusoidal"+"\n"+r"$z/h_C$",fontsize=15,labelpad=0.1)
@@ -221,7 +221,7 @@ for ax in axs.ravel():
     if ax.get_visible():
         ax.xaxis.set_major_formatter(ZeroScalarFormatter())
 
-plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'Mom_TwrProf_AllCases_labels_Ug_v2.png',dpi=300,edgecolor='white',facecolor='white')
+# plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'Mom_TwrProf_AllCases_labels_Ug_v2.jpg',dpi=300,edgecolor='white',facecolor='white')
 
 plt.show()
 # %%

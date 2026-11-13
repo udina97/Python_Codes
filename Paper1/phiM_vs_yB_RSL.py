@@ -963,7 +963,7 @@ axs[4].set_xlabel(r"$\phi_M$",fontsize=16)
 axs[5].set_xlabel(r"$\phi_M$",fontsize=16)
 axs[0].set_ylabel(r"$z/h_C$",fontsize=16)
 axs[3].set_ylabel(r"$z/h_C$",fontsize=16)
-plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'RSL_height_comparison_ustar.png',dpi=300,edgecolor='white',facecolor='white')
+# plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'RSL_height_comparison_ustar.png',dpi=300,edgecolor='white',facecolor='white')
 
 plt.show() 
 

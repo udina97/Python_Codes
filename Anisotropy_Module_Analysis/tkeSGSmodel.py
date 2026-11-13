@@ -25,21 +25,21 @@ from loadData import load_momentum
 
 #%%Simulation parameters
 
-nx = 64
-ny = 64
-nz = 64
+nx = 256
+ny = 256
+nz = 256
 
-lx = 5120 #2*np.pi
-ly = 5120 #2*np.pi
-lz = 2048 #1
+lx = 2000*np.pi
+ly = 2000*np.pi
+lz = 1000
 
 dx = lx/nx
 dy = ly/ny
 dz = lz/nz
 
-zi = 1024
+zi = 1000
 uscale = 1
-Tscale = 300
+# Tscale = 300
 x = np.arange(0,nx)*dx
 y = np.arange(0,ny)*dy
 z_uvp = np.arange(0,nz)*dz + dz/2
@@ -48,18 +48,18 @@ z_w = np.arange(0,nz)*dz
 #%%Load surface checkpoint/istantaneous fields 
 # sim = 'yb_test_v2'21583432158343
 
-sim = 'simC_Patton2011'
+sim = 'neut_9ms_256_Dear_Tdyn'
 
 path = '/scratch/general/nfs1/u1450851/LES_Sims/'
 
-step = 27500
+step = 20000
 avgtime = 15   
 
-# checkpnt = read_checkpoint_mom(path+sim+'/output_checkpoint/',[step],nx,ny,nz)
+checkpnt = read_checkpoint_mom(path+sim+'/output_checkpoint/',[step],nx,ny,nz,False)
 # checkpnt_sc = read_checkpoint(path+sim+'/output_checkpoint/',[step],nx,ny,nz, False)
 checkpnt_aniso = read_checkpoint_aniso(path+sim+'/output_checkpoint/',[step],nx,ny,nz)
 checkpnt_tke = read_checkpoint_tke(path+sim+'/output_checkpoint/',[step],nx,ny,nz)
-checkpnt_sfc = read_checkpoint_sfc_L(path+sim+'/output_checkpoint/',[step],nx,ny)
+# checkpnt_sfc = read_checkpoint_sfc_L(path+sim+'/output_checkpoint/',[step],nx,ny)
 # RAV_aniso = xr.open_dataarray(path+sim+'/data/Anisotropy/Data_Anisotropy_'+str(step)+'.nc').data
 # RAV_mom = xr.open_dataarray(path+sim+'/data/Momentum3D/Data_Momentum_'+str(avgtime)+'min.nc').data
 
@@ -97,11 +97,30 @@ for i in range(len(steps)):
 
 fig,axs = plt.subplots(1,2,tight_layout=True,figsize=(10,4))
 
-axs[0].pcolormesh(x,z_uvp,np.median(checkpnt_aniso['yB'],axis=(1)).T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+axs[0].pcolormesh(x,z_uvp,np.mean(checkpnt_aniso['yB'],axis=(1)).T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
 # axs[0].pcolormesh(x,z_uvp,checkpnt_aniso['yB'][:,ny//2,:].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
 # axs[0].pcolormesh(x,z_w,checkpnt_aniso['yB'][nx//2,:,:].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
 # axs[0].pcolormesh(x,y,checkpnt_aniso['yB'][:,:,15].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
 # axs[1].pcolormesh(x,z_uvp,np.median(RAV_aniso[:,:,:,1],axis=(1)).T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+
+plt.show()
+
+#%%
+
+fig,axs = plt.subplots(1,3,tight_layout=True,figsize=(14,4))
+
+axs[0].pcolormesh(x,z_uvp,checkpnt['u'][:,ny//2,:nz].T,cmap='viridis')
+axs[1].pcolormesh(x,z_uvp,checkpnt['v'][:,ny//2,:nz].T,cmap='viridis')
+axs[2].pcolormesh(x,z_w,checkpnt['w'][:,ny//2,:nz].T,cmap='viridis')
+
+axs[0].set_title(r'u',fontsize=12)
+axs[1].set_title(r'v',fontsize=12)
+axs[2].set_title(r'w',fontsize=12)
+
+axs[0].set_ylabel(r'z [m]',fontsize=12)
+
+for i in range(len(axs)):
+    axs[i].set_xlabel(r'x [m]',fontsize=12)
 
 plt.show()
 
@@ -132,9 +151,9 @@ axs[0,0].pcolormesh(x,z_uvp,checkpnt_aniso['u_new'][:,ny//2,:nz].T,cmap='viridis
 axs[0,1].pcolormesh(x,z_uvp,checkpnt_aniso['v_new'][:,ny//2,:nz].T,cmap='viridis')
 axs[0,2].pcolormesh(x,z_uvp,checkpnt_aniso['w_new'][:,ny//2,:nz].T,cmap='viridis')
 
-axs[1,0].pcolormesh(x,z_uvp,checkpnt_sc['u'][:,ny//2,:nz].T,cmap='viridis')
-axs[1,1].pcolormesh(x,z_uvp,checkpnt_sc['v'][:,ny//2,:nz].T,cmap='viridis')
-axs[1,2].pcolormesh(x,z_w,checkpnt_sc['w'][:,ny//2,:nz].T,cmap='viridis')
+# axs[1,0].pcolormesh(x,z_uvp,checkpnt_sc['u'][:,ny//2,:nz].T,cmap='viridis')
+# axs[1,1].pcolormesh(x,z_uvp,checkpnt_sc['v'][:,ny//2,:nz].T,cmap='viridis')
+# axs[1,2].pcolormesh(x,z_w,checkpnt_sc['w'][:,ny//2,:nz].T,cmap='viridis')
 
 # axs[0].pcolormesh(y,z_uvp,checkpnt_aniso['u_new'][nx//2,:,:nz].T,cmap='viridis')
 # axs[1].pcolormesh(y,z_uvp,checkpnt_aniso['v_new'][nx//2,:,:nz].T,cmap='viridis')
@@ -196,21 +215,24 @@ max_dTdz_height = (max_dTdz_level + 0.5)*dz*zi
 #%%Compute REynolds stresses and TKE, resolved and SGS
 
 Rxx_res = checkpnt_aniso['uu_new'][:,:,:nz] - checkpnt_aniso['u_new'][:,:,:nz]*checkpnt_aniso['u_new'][:,:,:nz]
-Rxx_sgs = - checkpnt_aniso['txx_new'][:,:,:nz] + (2/3)*checkpnt_aniso['tke_sgs_new'][:,:,:nz]
+Rxx_sgs = - checkpnt_aniso['txx_new'][:,:,:nz] 
+Rxx_iso = (2/3)*checkpnt_aniso['tke_sgs_new'][:,:,:nz]
 Rxx_tot = Rxx_res + Rxx_sgs
 # Rxx_rav_res = RAV_mom[:,:,:,4] - RAV_mom[:,:,:,0]*RAV_mom[:,:,:,0]
 # Rxx_rav_sgs = - RAV_mom[:,:,:,16] + (2/3)*wnode2uvpnode(RAV_mom[:,:,:,-1])
 # Rxx_rav_tot = Rxx_rav_res + Rxx_rav_sgs
 
 Ryy_res = checkpnt_aniso['vv_new'][:,:,:nz] - checkpnt_aniso['v_new'][:,:,:nz]*checkpnt_aniso['v_new'][:,:,:nz]
-Ryy_sgs = - checkpnt_aniso['tyy_new'][:,:,:nz] + (2/3)*checkpnt_aniso['tke_sgs_new'][:,:,:nz]
+Ryy_sgs = - checkpnt_aniso['tyy_new'][:,:,:nz] 
+Ryy_iso = (2/3)*checkpnt_aniso['tke_sgs_new'][:,:,:nz]
 Ryy_tot = Ryy_res + Ryy_sgs
 # Ryy_rav_res = RAV_mom[:,:,:,5] - RAV_mom[:,:,:,1]*RAV_mom[:,:,:,1]
 # Ryy_rav_sgs = - RAV_mom[:,:,:,17] + (2/3)*wnode2uvpnode(RAV_mom[:,:,:,-1])
 # Ryy_rav_tot = Ryy_rav_res + Ryy_rav_sgs
 
 Rzz_res = checkpnt_aniso['ww_new'][:,:,:nz] - checkpnt_aniso['w_new'][:,:,:nz]*checkpnt_aniso['w_new'][:,:,:nz]
-Rzz_sgs = - checkpnt_aniso['tzz_new'][:,:,:nz] + (2/3)*checkpnt_aniso['tke_sgs_new'][:,:,:nz]
+Rzz_sgs = - checkpnt_aniso['tzz_new'][:,:,:nz] 
+Rzz_iso = (2/3)*checkpnt_aniso['tke_sgs_new'][:,:,:nz]
 Rzz_tot = Rzz_res + Rzz_sgs
 # Rzz_rav_res = wnode2uvpnode(RAV_mom[:,:,:,6] - RAV_mom[:,:,:,2]*RAV_mom[:,:,:,2])
 # Rzz_rav_sgs = - RAV_mom[:,:,:,18] + (2/3)*wnode2uvpnode(RAV_mom[:,:,:,-1])
@@ -238,7 +260,7 @@ Ryz_tot = Ryz_res + Ryz_sgs
 # Ryz_rav_tot = Ryz_rav_res + Ryz_rav_sgs
 
 TKE_res = 0.5*(Rxx_res + Ryy_res + Rzz_res)#*(uscale**2)
-TKE_sgs = 0.5*(Rxx_sgs + Ryy_sgs + Rzz_sgs)#*(uscale**2)
+TKE_sgs = 0.5*(Rxx_sgs + Ryy_sgs + Rzz_sgs + 3*Rxx_iso)#*(uscale**2)
 TKE_tot = TKE_res + TKE_sgs
 # TKE_rav_res = 0.5*(Rxx_rav_res + Ryy_rav_res + Rzz_rav_res)#*(uscale**2)
 # TKE_rav_sgs = 0.5*(Rxx_rav_sgs + Ryy_rav_sgs + Rzz_rav_sgs)#*(uscale**2)
@@ -248,6 +270,37 @@ TKE_res_rat = (TKE_res)/(TKE_tot)
 TKE_sgs_rat = (TKE_sgs)/(TKE_tot)
 # TKE_rav_res_rat = (TKE_rav_res)/(TKE_rav_tot)*100
 # TKE_rav_sgs_rat = (TKE_rav_sgs)/(TKE_rav_tot)*100
+
+#%%Plot profiles of the Reynolds stress contributions
+
+fig,axs = plt.subplots(1,6,tight_layout=True,sharey=True)
+
+axs[0].plot(np.mean(Rxx_res,axis=(0,1)),z_uvp,c='k',label='res')
+axs[0].plot(np.mean(Rxx_sgs,axis=(0,1)),z_uvp,c='r',label='sgs')
+axs[0].plot(np.mean(Rxx_iso,axis=(0,1)),z_uvp,c='g',label='iso')
+
+axs[1].plot(np.mean(Ryy_res,axis=(0,1)),z_uvp,c='k')
+axs[1].plot(np.mean(Ryy_sgs,axis=(0,1)),z_uvp,c='r')
+axs[1].plot(np.mean(Ryy_iso,axis=(0,1)),z_uvp,c='g')
+
+axs[2].plot(np.mean(Rzz_res,axis=(0,1)),z_uvp,c='k')
+axs[2].plot(np.mean(Rzz_sgs,axis=(0,1)),z_uvp,c='r')
+axs[2].plot(np.mean(Rzz_iso,axis=(0,1)),z_uvp,c='g')
+
+axs[3].plot(np.mean(Rxy_res,axis=(0,1)),z_uvp,c='k')
+axs[3].plot(np.mean(Rxy_sgs,axis=(0,1)),z_uvp,c='r')
+
+axs[4].plot(np.mean(Rxz_res,axis=(0,1)),z_uvp,c='k')
+axs[4].plot(np.mean(Rxz_sgs,axis=(0,1)),z_uvp,c='r')
+
+axs[5].plot(np.mean(Ryz_res,axis=(0,1)),z_uvp,c='k')
+axs[5].plot(np.mean(Ryz_sgs,axis=(0,1)),z_uvp,c='r')
+
+axs[0].set_ylim(z_uvp[0],z_uvp[-1])
+axs[0].set_ylabel(r'z')
+axs[0].legend()
+
+plt.show()
 
 #%%Plot pcolor of Reynolds terms
 
@@ -340,7 +393,7 @@ axs.set_ylabel('z')
 axs.set_xlabel(r'$f^{res}$')
 
 axs.set_xlim(0,1)
-axs.set_ylim(0,1)
+# axs.set_ylim(0,1)
 axs.grid()
 
 plt.show()

@@ -16,16 +16,16 @@ os.chdir('/uufs/chpc.utah.edu/common/home/u1450851/Python_Codes/functions/')
 from LES_check_functions import log_u_profile, check_mke, check_ustar, tau_wall_profile, plot_u_2D_xy, plot_u_2D_xz, plot_ustar_2D, plot_T_2D, plot_sfcval, plot_test
 
 #%% Set path to DataMomentum.nc and running_diagnostics.txt files
-sim = 'neut_9ms_64_Dear_Tfix'
+sim = 'neut_9ms_256_Dear_Tdyn'
 path_diag = '/scratch/general/nfs1/u1450851/LES_Sims/'+sim+'/'
 # path_RAV = '/scratch/general/nfs1/u1450851/LES_Sims/anisotropy/output_RAV/'
 # path_TKE = '/scratch/general/nfs1/u1450851/tke_test/output_tke_3D/'
 
 #%% Define domain shape and grid resolution
 
-Nx = 64
-Ny = 64
-Nz = 64
+Nx = 256
+Ny = 256
+Nz = 256
 Lx = 2*np.pi
 Ly = 2*np.pi
 Lz = 1

@@ -108,6 +108,11 @@ for i in range(3):
     
 from matplotlib.ticker import ScalarFormatter
 
+for ax in axs.ravel():
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((0, 0))  # always use a ×10^n scale factor
+    ax.xaxis.set_major_formatter(formatter)
 
 class ZeroScalarFormatter(ScalarFormatter):
     def __call__(self, x, pos=None):
@@ -115,9 +120,9 @@ class ZeroScalarFormatter(ScalarFormatter):
             return "0"
         return super().__call__(x, pos)
     
-for ax in axs.ravel():
-    if ax.get_visible():
-        ax.xaxis.set_major_formatter(ZeroScalarFormatter())
+# for ax in axs.ravel():
+#     if ax.get_visible():
+#         ax.xaxis.set_major_formatter(ZeroScalarFormatter())
 
 # plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'TKE_TwrProf_AllCases_colorblind_Ug.png',dpi=300,edgecolor='white',facecolor='white')
 

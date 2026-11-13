@@ -151,11 +151,11 @@ from matplotlib.transforms import ScaledTranslation
 # colors = ['#0072B2','#E69F00','#CC79A7']
 colors = ['#41049D','#CC4778','#FCA636']
 ls = ['-','--','-.']
-tols = [10,5,15]
+tols = [10]#,5,15]
 layout = [['a)', 'b)', 'c)'],
           ['d)', 'e)', 'f)']]
 
-fig, axs_dict = plt.subplot_mosaic(layout, layout='constrained',figsize=(8,6),sharey=False)
+fig, axs_dict = plt.subplot_mosaic(layout, layout='constrained',figsize=(7,5),sharey=False)
 
 for label, ax in axs_dict.items():
     ax.text(
@@ -296,10 +296,10 @@ axs[1,2].set_xlim(0.25,0.8)
 for i in range(len(axs[0])):
     axs[0,i].set_ylim(0)
     axs[1,i].set_ylim(0)
-    axs[0,i].tick_params(axis='both', which='major', labelsize=12)
-    axs[1,i].tick_params(axis='both', which='major', labelsize=12)
+    axs[0,i].tick_params(axis='both', which='major', labelsize=11)
+    axs[1,i].tick_params(axis='both', which='major', labelsize=11)
     
-# plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'Variances_RottaModel_cRyB.png',dpi=300,edgecolor='white',facecolor='white')
+plt.savefig('/uufs/chpc.utah.edu/common/home/u1450851/Pictures/Paper1/' + 'Variances_RottaModel_cRyB.png',dpi=300,edgecolor='white',facecolor='white')
 
 plt.show()
 

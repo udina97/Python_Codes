@@ -1,0 +1,31 @@
+{
+  "simulation": "/scratch/general/nfs1/u1450851/LES_Sims/simB_Patton2011",
+  "snapshot_step": 146010,
+  "replayed_wall_call_step": 146011,
+  "anisotropy_checkpoint": "/scratch/general/nfs1/u1450851/LES_Sims/simB_Patton2011/output_checkpoint/checkpoint_aniso_000146010",
+  "surface_checkpoint": "/scratch/general/nfs1/u1450851/LES_Sims/simB_Patton2011/output_checkpoint/checkpoint_wsc_000146010_sfc",
+  "wall_model": "'wall_filter'",
+  "run_anisotropy_flag": ".false.",
+  "comparison_is_counterfactual": true,
+  "anisotropy_surface_level": 5,
+  "run_anisotropy_surface_level": 1,
+  "unstable_anisotropic_phi_m_version": "clipped",
+  "unstable_anisotropic_psi_m_limit": 1.799934205207556,
+  "fixed_plot_scales_from": "/uufs/chpc.utah.edu/common/home/u1450851/Python_Codes/Anisotropy_Module_Analysis/LESustarheat_output/snapshot_000146010_yB_level_05_extended_phi_m/snapshot_ustar_fields.npz",
+  "difference_definition": "anisotropic minus standard",
+  "ratio_definition": "standard divided by anisotropic",
+  "units": {
+    "ustar": "m/s"
+  },
+  "metrics": {
+    "standard_mean_m_s": 0.1882982271437511,
+    "anisotropic_mean_m_s": 0.18885577508319285,
+    "signed_difference_mean_m_s": 0.0005575479394417732,
+    "absolute_difference_mean_m_s": 0.005537372753984016,
+    "signed_difference_minimum_m_s": -0.03558444387796211,
+    "signed_difference_maximum_m_s": 0.0239111600008447,
+    "standard_over_anisotropic_ratio_mean": 0.9964267560159024,
+    "standard_over_anisotropic_ratio_minimum": 0.9130435091071678,
+    "standard_over_anisotropic_ratio_maximum": 1.100360609378698
+  }
+}

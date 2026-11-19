@@ -1,0 +1,74 @@
+{
+  "simulation": "/scratch/general/nfs1/u1450851/LES_Sims/simB_Patton2011",
+  "snapshot_step": 136000,
+  "wall_call_step": 136001,
+  "les_checkpoint_step": 136001,
+  "wall_model": "'wall_filter'",
+  "run_anisotropy_flag": ".false.",
+  "anisotropy_surface_level": 1,
+  "run_anisotropy_surface_level": 1,
+  "anisotropy_level_overridden": false,
+  "comparison_branch": "standard",
+  "comparison_units": {
+    "ustar": "m/s",
+    "heat_flux": "K m/s"
+  },
+  "comparison_errors": {
+    "ustar": {
+      "mean_absolute_error": 3.1454886133643663e-17,
+      "root_mean_square_error": 4.331538690018277e-17,
+      "maximum_absolute_error": 1.6653345369377348e-16
+    },
+    "heat_flux": {
+      "mean_absolute_error": 0.0,
+      "root_mean_square_error": 0.0,
+      "maximum_absolute_error": 0.0
+    }
+  },
+  "anisotropic_minus_standard_ustar": {
+    "mean_signed_m_s": 0.00500761868092999,
+    "median_signed_m_s": 0.0012808491239327952,
+    "mean_absolute_m_s": 0.005701860082991464,
+    "minimum_signed_m_s": -0.024857046307862674,
+    "maximum_signed_m_s": 0.025195272737495944,
+    "fraction_positive": 0.592041015625,
+    "fraction_negative": 0.048828125,
+    "fraction_unchanged_within_1e_12_m_s": 0.359130859375,
+    "fraction_at_shared_high_instability_cap": 0.359130859375,
+    "relative_change_reference_floor_m_s": 0.01,
+    "fraction_masked_from_relative_change": 0.001953125,
+    "fraction_with_absolute_relative_change_over_1_percent": 0.5124755381604696,
+    "fraction_with_absolute_relative_change_over_5_percent": 0.20865949119373778,
+    "standard_over_anisotropic_ratio_mean": 0.9795479763090691,
+    "standard_over_anisotropic_ratio_minimum": 0.9098758968799432,
+    "standard_over_anisotropic_ratio_maximum": 1.079295014066787,
+    "mean_absolute_psi_m_difference": 0.08078449182838895
+  },
+  "saved_checkpoint_ustar_mean_m_s": 0.17787123862819776,
+  "branches": {
+    "standard": {
+      "ustar": {
+        "mean": 0.17787441397572157,
+        "min": 0.0014021830198957504,
+        "max": 0.4045087910715043
+      },
+      "heat_flux": {
+        "mean": 0.2400000000000001,
+        "min": 0.24,
+        "max": 0.24
+      }
+    },
+    "anisotropic": {
+      "ustar": {
+        "mean": 0.1828820326566516,
+        "min": 0.0014021830198957504,
+        "max": 0.38517500005490257
+      },
+      "heat_flux": {
+        "mean": 0.2400000000000001,
+        "min": 0.24,
+        "max": 0.24
+      }
+    }
+  }
+}

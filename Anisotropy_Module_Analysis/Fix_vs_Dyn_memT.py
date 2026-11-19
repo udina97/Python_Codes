@@ -26,9 +26,9 @@ from loadData import load_momentum
 
 #%%Simulation parameters
 
-nx = 64
-ny = 64
-nz = 64
+nx = 256
+ny = 256
+nz = 256
 
 lx = 2000*np.pi
 ly = 2000*np.pi
@@ -52,13 +52,13 @@ z_w = np.arange(0,nz)*dz
 #%%Load data
 
 path = '/scratch/general/nfs1/u1450851/LES_Sims/'
-sims = ['neut_9ms_64_Dear_Tdyn','neut_9ms_64_Dear_Tfix']#,'neut_9ms_64_Smag_Tfix','neut_9ms_64_Smag_T1hr','neut_9ms_64_Smag_T5hr']
+sims = ['neut_9ms_256_Dear_Tdyn']#,'neut_9ms_64_Dear_Tdyn']#,'neut_9ms_64_Smag_Tfix','neut_9ms_64_Smag_T1hr','neut_9ms_64_Smag_T5hr']
 
 step = 936000
 time_ext = '30min'
 bools = [False,False]
 
-cases = ['D','F']
+cases = ['D']#,'F']
 # cases = sims
 
 mom3D = dict(); tke3D = dict(); mom2D = dict(); aniso3D = dict()#; sc3D = dict(); sc2D = dict()
@@ -190,7 +190,7 @@ plt.show()
 #%%Plot the dynamic memory time scale
 
 from matplotlib.colors import LogNorm
-T = ((3/aniso_C['S']['S_uvp'][:,:,:nz])*(zi/uscale))/60
+T = ((3/aniso_C['D']['S_uvp'][:,:,:nz])*(zi/uscale))/60
 
 fig,axs = plt.subplots(1,2,tight_layout=True,figsize=(10,4))
 
@@ -202,7 +202,7 @@ axs[0].set_xlabel(r'x [m]',fontsize=12)
 axs[0].set_ylabel(r'z [m]',fontsize=12)
 axs[0].set_title(r'T', fontsize=12)
 
-z_lvl = 50
+z_lvl = 120
 axs[0].axhline(z_lvl*dz + dz/2,c='r',ls='--')
 y_pdf = gaussian_kde(T[:,:,z_lvl].flatten())
 x_pdf = np.linspace(T[:,:,z_lvl].flatten().min(),T[:,:,z_lvl].flatten().max(),1000)

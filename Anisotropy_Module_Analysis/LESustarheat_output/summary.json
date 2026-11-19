@@ -1,0 +1,35 @@
+{
+  "simulation": "/scratch/general/nfs1/u1450851/LES_Sims/simB_Patton2011",
+  "snapshot_step": 136000,
+  "wall_call_step": 136001,
+  "wall_model": "'wall_filter'",
+  "run_anisotropy_flag": ".false.",
+  "anisotropy_surface_level": 1,
+  "saved_checkpoint_ustar_mean_m_s": 0.17787123862819776,
+  "branches": {
+    "standard": {
+      "ustar": {
+        "mean": 0.17787441397572157,
+        "min": 0.0014021830198957504,
+        "max": 0.4045087910715043
+      },
+      "heat_flux": {
+        "mean": 0.2400000000000001,
+        "min": 0.24,
+        "max": 0.24
+      }
+    },
+    "anisotropic": {
+      "ustar": {
+        "mean": 0.1828820326566516,
+        "min": 0.0014021830198957504,
+        "max": 0.38517500005490257
+      },
+      "heat_flux": {
+        "mean": 0.2400000000000001,
+        "min": 0.24,
+        "max": 0.24
+      }
+    }
+  }
+}

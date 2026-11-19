@@ -1,0 +1,58 @@
+{
+  "simulation": "/scratch/general/nfs1/u1450851/LES_Sims/simB_Patton2011",
+  "snapshot_step": 136010,
+  "wall_call_step": 136011,
+  "les_checkpoint_step": null,
+  "wall_model": "'wall_filter'",
+  "run_anisotropy_flag": ".false.",
+  "anisotropy_surface_level": 1,
+  "comparison_branch": "standard",
+  "comparison_units": {
+    "ustar": "m/s",
+    "heat_flux": "K m/s"
+  },
+  "comparison_errors": null,
+  "anisotropic_minus_standard_ustar": {
+    "mean_signed_m_s": 0.005012405010286241,
+    "median_signed_m_s": 0.0013320458528914142,
+    "mean_absolute_m_s": 0.005704989892674383,
+    "minimum_signed_m_s": -0.024400553929507796,
+    "maximum_signed_m_s": 0.02492487266977461,
+    "fraction_positive": 0.5927734375,
+    "fraction_negative": 0.0498046875,
+    "fraction_unchanged_within_1e_12_m_s": 0.357421875,
+    "fraction_at_shared_high_instability_cap": 0.357421875,
+    "relative_change_reference_floor_m_s": 0.01,
+    "fraction_masked_from_relative_change": 0.001953125,
+    "fraction_with_absolute_relative_change_over_1_percent": 0.512720156555773,
+    "fraction_with_absolute_relative_change_over_5_percent": 0.21012720156555773,
+    "mean_absolute_psi_m_difference": 0.08083105579313177
+  },
+  "saved_checkpoint_ustar_mean_m_s": 0.17790361346149625,
+  "branches": {
+    "standard": {
+      "ustar": {
+        "mean": 0.17790697073169937,
+        "min": 0.00042705393761124536,
+        "max": 0.4042084620975469
+      },
+      "heat_flux": {
+        "mean": 0.2400000000000001,
+        "min": 0.24,
+        "max": 0.24
+      }
+    },
+    "anisotropic": {
+      "ustar": {
+        "mean": 0.1829193757419856,
+        "min": 0.00042705393761124536,
+        "max": 0.3848593375916522
+      },
+      "heat_flux": {
+        "mean": 0.2400000000000001,
+        "min": 0.24,
+        "max": 0.24
+      }
+    }
+  }
+}

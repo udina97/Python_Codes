@@ -52,9 +52,9 @@ z_w = np.arange(0,nz)*dz
 #%%Load RAV data
 
 path = '/scratch/general/nfs1/u1450851/LES_Sims/'
-sim = 'simB_Patton2011'
+sim = 'simB_Patton2011_A'
 step = 136000
-time_ext = '60min'
+time_ext = '30min'
 
 aniso = xr.open_dataarray(path+sim+'/data/Anisotropy/Data_Anisotropy_'+str(step)+'.nc').data
 mom3D = xr.open_dataarray(path+sim+'/data/Momentum3D/Data_Momentum_'+str(time_ext)+'.nc').data

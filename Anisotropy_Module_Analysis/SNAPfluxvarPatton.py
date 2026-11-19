@@ -142,7 +142,7 @@ z_w = np.arange(0,nz)*dz
 path = '/scratch/general/nfs1/u1450851/LES_Sims/'
 sim = 'simB_Patton2011'
 step = 136000
-time_ext = '10min'
+time_ext = '30min'
 
 aniso = xr.open_dataarray(path+sim+'/data/Anisotropy/Data_Anisotropy_'+str(step)+'.nc').data
 mom3D = xr.open_dataarray(path+sim+'/data/Momentum3D/Data_Momentum_'+str(time_ext)+'.nc').data
@@ -154,7 +154,8 @@ sc3D = xr.open_dataarray(path+sim+'/data/Scalar3D/Data_Scalar_'+str(time_ext)+'.
 num_snap = 1
 u, v, w, sc = load_output4_snapshots(path+sim+'/output_snap/', nx, ny, nz, num_snap, step, num_scalars=1)
 
-#%%
+#%%Plot istantaneous flow field and anisotropy
+
 fig,axs = plt.subplots(1,3,tight_layout=True,figsize=(14,4))
 
 axs[0].pcolormesh(x,z_uvp,u[:,ny//2,:,0].T,cmap='viridis')
@@ -169,6 +170,18 @@ axs[0].set_ylabel(r'z [m]',fontsize=12)
 
 for i in range(len(axs)):
     axs[i].set_xlabel(r'x [m]',fontsize=12)
+
+plt.show()
+
+fig,axs = plt.subplots(1,1,tight_layout=True,figsize=(7,4))
+
+# axs.pcolormesh(x,z_uvp,aniso[:,ny//2,:,1].T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+axs.pcolormesh(x,z_uvp,np.mean(aniso[:,:,:,1],axis=(1)).T,cmap=cmap,vmin=0,vmax=np.sqrt(3)/2)
+
+axs.set_title(r'$y_B$',fontsize=12)
+
+axs.set_ylabel(r'z [m]',fontsize=12)
+axs.set_xlabel(r'x [m]',fontsize=12)
 
 plt.show()
 

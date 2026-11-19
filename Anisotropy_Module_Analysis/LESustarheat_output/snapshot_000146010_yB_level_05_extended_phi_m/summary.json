@@ -1,0 +1,29 @@
+{
+  "simulation": "/scratch/general/nfs1/u1450851/LES_Sims/simB_Patton2011",
+  "snapshot_step": 146010,
+  "replayed_wall_call_step": 146011,
+  "anisotropy_checkpoint": "/scratch/general/nfs1/u1450851/LES_Sims/simB_Patton2011/output_checkpoint/checkpoint_aniso_000146010",
+  "surface_checkpoint": "/scratch/general/nfs1/u1450851/LES_Sims/simB_Patton2011/output_checkpoint/checkpoint_wsc_000146010_sfc",
+  "wall_model": "'wall_filter'",
+  "run_anisotropy_flag": ".false.",
+  "comparison_is_counterfactual": true,
+  "anisotropy_surface_level": 5,
+  "run_anisotropy_surface_level": 1,
+  "unstable_anisotropic_psi_m_limit": 2.3,
+  "difference_definition": "anisotropic minus standard",
+  "ratio_definition": "standard divided by anisotropic",
+  "units": {
+    "ustar": "m/s"
+  },
+  "metrics": {
+    "standard_mean_m_s": 0.1882982271437511,
+    "anisotropic_mean_m_s": 0.20056944007443364,
+    "signed_difference_mean_m_s": 0.012271212930682526,
+    "absolute_difference_mean_m_s": 0.01725064117968065,
+    "signed_difference_minimum_m_s": -0.03558203148410477,
+    "signed_difference_maximum_m_s": 0.04727772644250017,
+    "standard_over_anisotropic_ratio_mean": 0.9208080477521448,
+    "standard_over_anisotropic_ratio_minimum": 0.8146142529834499,
+    "standard_over_anisotropic_ratio_maximum": 1.1003462393798875
+  }
+}

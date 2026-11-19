@@ -1,0 +1,69 @@
+{
+  "simulation": "/scratch/general/nfs1/u1450851/LES_Sims/simB_Patton2011",
+  "snapshot_step": 136009,
+  "wall_call_step": 136010,
+  "les_checkpoint_step": 136010,
+  "wall_model": "'wall_filter'",
+  "run_anisotropy_flag": ".false.",
+  "anisotropy_surface_level": 1,
+  "comparison_branch": "standard",
+  "comparison_units": {
+    "ustar": "m/s",
+    "heat_flux": "K m/s"
+  },
+  "comparison_errors": {
+    "ustar": {
+      "mean_absolute_error": 3.236532743793383e-17,
+      "root_mean_square_error": 4.4543488891658445e-17,
+      "maximum_absolute_error": 1.942890293094024e-16
+    },
+    "heat_flux": {
+      "mean_absolute_error": 0.0,
+      "root_mean_square_error": 0.0,
+      "maximum_absolute_error": 0.0
+    }
+  },
+  "anisotropic_minus_standard_ustar": {
+    "mean_signed_m_s": 0.005011939449975058,
+    "median_signed_m_s": 0.001328220777571082,
+    "mean_absolute_m_s": 0.005704690201025199,
+    "minimum_signed_m_s": -0.024370800995473008,
+    "maximum_signed_m_s": 0.024965099512221645,
+    "fraction_positive": 0.59326171875,
+    "fraction_negative": 0.049560546875,
+    "fraction_unchanged_within_1e_12_m_s": 0.357177734375,
+    "fraction_at_shared_high_instability_cap": 0.357177734375,
+    "relative_change_reference_floor_m_s": 0.01,
+    "fraction_masked_from_relative_change": 0.001953125,
+    "fraction_with_absolute_relative_change_over_1_percent": 0.512720156555773,
+    "fraction_with_absolute_relative_change_over_5_percent": 0.2098825831702544,
+    "mean_absolute_psi_m_difference": 0.08082668765517953
+  },
+  "saved_checkpoint_ustar_mean_m_s": 0.17790024750775435,
+  "branches": {
+    "standard": {
+      "ustar": {
+        "mean": 0.17790361346149625,
+        "min": 0.00024534859635240273,
+        "max": 0.4042414436064052
+      },
+      "heat_flux": {
+        "mean": 0.2400000000000001,
+        "min": 0.24,
+        "max": 0.24
+      }
+    },
+    "anisotropic": {
+      "ustar": {
+        "mean": 0.18291555291147132,
+        "min": 0.00024534859635240273,
+        "max": 0.3848932183400393
+      },
+      "heat_flux": {
+        "mean": 0.2400000000000001,
+        "min": 0.24,
+        "max": 0.24
+      }
+    }
+  }
+}

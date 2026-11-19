@@ -1,0 +1,37 @@
+{
+  "simulation": "/scratch/general/nfs1/u1450851/LES_Sims/simB_Patton2011",
+  "snapshot_steps": [
+    136110,
+    136210,
+    136310,
+    136410,
+    136510,
+    136610,
+    136710,
+    136810,
+    136910,
+    137010
+  ],
+  "number_of_snapshots": 10,
+  "requested_step_range": [
+    136110,
+    137010
+  ],
+  "wall_model": "'wall_filter'",
+  "run_anisotropy_flag": ".false.",
+  "anisotropy_surface_level": 5,
+  "run_anisotropy_surface_level": 1,
+  "units": {
+    "ustar": "m/s"
+  },
+  "averaged_ustar": {
+    "difference_mean_m_s": 0.0018083640938109159,
+    "difference_minimum_m_s": -0.032532120001683595,
+    "difference_maximum_m_s": 0.022374244020612777,
+    "anisotropic_over_standard_ratio_mean": 1.009319605260636,
+    "anisotropic_over_standard_ratio_minimum": 0.9095707575961939,
+    "anisotropic_over_standard_ratio_maximum": 1.089363600739848
+  },
+  "standard_mean_m_s": 0.18005229940647294,
+  "anisotropic_mean_m_s": 0.18186066350028382
+}
